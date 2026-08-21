@@ -1,0 +1,101 @@
+---
+title: B2B — authorization & configurators
+---
+
+# B2B — authorization & configurators
+
+B2B storefronts add two concerns the B2C flow does not have: **purchase
+authorization** (spend limits and approval workflows) and **configurable
+products** (clusters). Three composables cover them:
+`usePurchaseAuthorizationConfigurator`,
+`usePurchaseAuthorizationRequests` and `useClusterConfigurator`.
+
+Signatures:
+[`usePurchaseAuthorizationConfigurator`](/api/composables/vue/usePurchaseAuthorization/),
+[`usePurchaseAuthorizationRequests`](/api/composables/vue/usePurchaseAuthorization/),
+[`useClusterConfigurator`](/api/composables/vue/useClusterConfigurator/).
+
+The first two are exported from one module — `usePurchaseAuthorization.ts` —
+but are documented and used separately.
+
+## Purchase authorization, in context
+
+A B2B `Contact` can hold a **purchase-authorization config (PAC)** scoped to
+a company — a `PURCHASER` role with an `authorizationLimit`. When a cart's
+gross total exceeds that limit, the contact cannot check out directly; the
+cart must be **submitted for authorization** to someone with approval
+rights.
+
+This is why [`useCart`](/guides/api/cart) exposes:
+
+- `checkoutAllowed` — `false` when the cart exceeds the contact's PAC limit.
+- `requestAuthorization()` — calls `cart.requestCartAuthorization` to submit
+  the cart for approval.
+
+The two composables below manage the rules and the approval queue.
+
+## `usePurchaseAuthorizationConfigurator`
+
+Manage a company's PAC rules — who can purchase, up to what limit, who
+approves.
+
+```ts
+const pac = usePurchaseAuthorizationConfigurator({
+  graphqlClient,
+  user,
+  companyId,
+});
+```
+
+It calls `services.purchaseAuthConfig` to read and mutate PAC entries
+(`createPac` / `updatePac` / `deletePac`). The options object carries
+callbacks; because that object can be recreated, the composable keeps it in
+a ref so handlers always see the latest callbacks without stale closures.
+It returns the editable rows, an add-contact form state, and save/delete
+actions — each resolving to a result object.
+
+## `usePurchaseAuthorizationRequests`
+
+The approval queue — carts other contacts have submitted for authorization.
+
+```ts
+const requests = usePurchaseAuthorizationRequests({
+  graphqlClient,
+  user,
+  companyId,
+  configuration,
+});
+```
+
+It works against `services.cart`:
+
+- `loadCarts()` — `cart.getCarts` filtered by
+  `CartStatus.PENDING_PURCHASE_AUTHORIZATION` and the company id.
+- `handleViewCart(cart)` — `cart.getCart` for the full cart detail in the
+  review modal.
+- `handleAcceptRequest()` — `cart.acceptPurchaseAuthorizationRequest`,
+  approving the selected cart on behalf of the current contact.
+
+An `isAuthManager` computed flags whether the current user may approve.
+Pass `onAcceptRequest` to route approval through your own backend instead
+of the SDK call.
+
+## `useClusterConfigurator`
+
+A **cluster** is a configurable product — a family of variant products
+narrowed by selecting option values (size, colour, material…).
+`useClusterConfigurator` holds the selection state and resolves it to a
+concrete product.
+
+```ts
+const configurator = useClusterConfigurator({ /* cluster, services */ });
+```
+
+As the user picks option values it narrows the candidate set and recomputes
+pricing via `services.cluster`. When the selection resolves to a single
+buyable product, that product flows into `AddToCart` like any other.
+
+Unlike most data composables, `useClusterConfigurator` is primarily a
+**selection state machine** — its API calls are the cluster-config lookups
+needed to validate and price the current selection, not a fetch-on-mount
+data load.

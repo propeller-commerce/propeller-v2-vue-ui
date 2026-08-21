@@ -1,0 +1,104 @@
+---
+title: Getting started
+---
+
+# Getting started
+
+## Install
+
+```bash
+npm install propeller-v2-vue-ui propeller-sdk-v2 --install-links
+```
+
+`propeller-sdk-v2` is a **peer dependency** — install it yourself so the
+package and your application share a single SDK instance. `--install-links`
+is needed on Windows for `file:` / `github:` installs.
+
+### Peer dependencies
+
+| Package            | Version | Required |
+| ------------------ | ------- | -------- |
+| `vue`              | `>=3.4` | Yes      |
+| `propeller-sdk-v2` | `*`     | Yes      |
+
+There is **no dependency on Nuxt or `vue-router`** — nothing in the package
+imports them. A plain Vite + Vue app works out of the box.
+
+## Import the stylesheet
+
+The package ships a precompiled stylesheet. Import it once, at your app
+entry:
+
+```ts
+import 'propeller-v2-vue-ui/styles.css';
+```
+
+You do not need Tailwind in your own project — the CSS is already compiled.
+(See [Styling](/styling) for how to override it.)
+
+## Build the client and install the provider
+
+Every component resolves its infrastructure (the SDK services, the current
+user, language, currency, …) from the Propeller provider at the root of
+your tree. You construct a GraphQL client, build the services bundle, and
+install both via `providePropeller`:
+
+```ts
+// src/lib/api.ts — your app owns this file
+import { GraphQLClient } from 'propeller-sdk-v2';
+import { createServices } from 'propeller-v2-vue-ui';
+
+export const graphqlClient = new GraphQLClient({
+  endpoint: '/api/graphql', // your endpoint / proxy path
+  apiKey: '',
+  timeout: 30_000,
+});
+export const services = createServices(graphqlClient);
+```
+
+```vue
+<!-- src/App.vue -->
+<script setup lang="ts">
+import { providePropeller } from 'propeller-v2-vue-ui';
+import { graphqlClient, services } from '@/lib/api';
+
+providePropeller({
+  graphqlClient,
+  services,
+  user: null,            // your auth state
+  companyId: undefined,
+  language: 'NL',
+  includeTax: false,
+  currency: '€',
+  configuration: {},
+  portalMode: 'open',
+});
+</script>
+
+<template>
+  <RouterView />
+</template>
+```
+
+`providePropeller` must be called in a component's `setup()` — typically
+the root `App.vue` — so the `provide` reaches the whole tree.
+
+Why you build the client yourself is explained in
+[The SDK seam](/sdk-seam) — it is the central design decision of the
+package.
+
+## Render a component
+
+Inside the provider, drop in a component:
+
+```vue
+<script setup lang="ts">
+import { ProductCard } from 'propeller-v2-vue-ui';
+</script>
+
+<template>
+  <ProductCard :product="product" />
+</template>
+```
+
+See the [Component reference](/components) for the full catalogue.

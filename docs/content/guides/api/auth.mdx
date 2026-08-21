@@ -1,0 +1,120 @@
+---
+title: Authentication & accounts
+---
+
+# Authentication & accounts
+
+Three composables cover identity and account data: `useAuth` (login,
+registration, password reset), `useCompany` (B2B company switching) and
+`useAddress` (address CRUD). This page explains their API calls and the
+auth-token lifecycle — the part most worth getting right.
+
+Signatures: [`useAuth`](/api/composables/vue/useAuth/),
+[`useCompany`](/api/composables/vue/useCompany/),
+[`useAddress`](/api/composables/vue/useAddress/).
+
+## The auth-token lifecycle
+
+This is the single most important thing to understand.
+
+`useAuth().login()` calls `services.login.login()`, receives a session with
+an `accessToken`, and then:
+
+```ts
+// inside useAuth — simplified
+if (accessToken) {
+  graphqlClient.setAccessToken(accessToken);
+  onAuthHeaderUpdate?.(accessToken);
+}
+```
+
+- `setAccessToken` registers the token on the `GraphQLClient` you own. From
+  that point every composable's calls are authenticated, because they all
+  share that client.
+- The composable also fires a `userLoggedIn` `CustomEvent` on `window`, so
+  parts of your app that are not inside the Vue tree can react to a login.
+- `onAuthHeaderUpdate(token)` is your hook for **cross-reload persistence**.
+  `setAccessToken` only covers the current page session; surviving a reload
+  is your app's job. The recommended pattern: your `onAuthHeaderUpdate`
+  callback POSTs the token to your own backend, which sets an **httpOnly
+  cookie**; your GraphQL proxy route then injects the Bearer header
+  server-side on every request, so the token never sits in
+  client-readable storage.
+
+So: `useAuth` authenticates the *current page session* on the client and
+hands you the token through `onAuthHeaderUpdate`; persisting it safely
+across reloads is wired in your app.
+
+## `useAuth`
+
+```ts
+const { login, registerContact, registerCustomer, forgotPassword,
+        loading, error } = useAuth({ graphqlClient, onAuthHeaderUpdate });
+```
+
+| Action | SDK calls | Notes |
+| --- | --- | --- |
+| `login(email, password)` | `login.login` → `user.getViewer` | Sets the access token; returns the user |
+| `registerContact(input)` | `company.createCompany` → `user.registerContact` → `login.login` → `address.createCompanyAddress` | B2B contact — see ordering below |
+| `registerCustomer(input)` | `user.registerCustomer` → `login.login` → `address.createCustomerAddress` | B2C customer |
+| `forgotPassword(email)` | `user.sendPasswordResetEmail` | Fire-and-forget reset email |
+
+All four resolve to a result object (`LoginResult` or
+`{ success, error? }`) — none throw.
+
+`login` also accepts an optional `onLoginSubmit` callback: pass it to drive
+authentication through your own backend instead of `services.login`, and
+`useAuth` will use your result rather than calling the SDK.
+
+### Registration ordering matters
+
+`registerContact` and `registerCustomer` **log in before creating
+addresses**. `createCompanyAddress` / `createCustomerAddress` are
+account-scoped mutations the backend authorises against the logged-in
+user — calling them anonymously (API key only) returns `FORBIDDEN`. So the
+flow is: create the account → `login()` (sets the access token) → create
+addresses with that authenticated session.
+
+`registerContact` / `registerCustomer` take an `autoLogin` argument
+(default `true`). When `autoLogin` is `false`, the implicit login is still
+performed for the address step, then **dropped afterwards**
+(`graphqlClient.setAccessToken('')` and `onAuthHeaderUpdate('')`) so the
+caller does not observe a logged-in state it did not ask for.
+
+### `getViewer` and tracked attributes
+
+After login, `user.getViewer` fetches the full `Contact`/`Customer`. The
+`configuration` option lets you request extra tracked attributes
+(`contactTrackAttributes`, `companyTrackAttributes`, …) and a contact
+PA-config sub-selection — these become part of the `ViewerInput` sent to the
+backend.
+
+## `useCompany`
+
+```ts
+const company = useCompany({ graphqlClient, language: ref('NL') });
+```
+
+For B2B contacts that belong to multiple companies. It calls
+`services.company` (`getCompany`) to load the active company, and
+`services.cart` / `services.purchaseAuthConfig` for the
+purchase-authorization screens it also backs (see [B2B](/guides/api/b2b)).
+
+Switching the active company changes the `companyId` used for cart lookup,
+pricing and authorization downstream — feed the new `companyId` back into
+the `Ref` you pass to `providePropeller` and the other composables, and the
+whole tree re-resolves reactively.
+
+## `useAddress`
+
+```ts
+const address = useAddress({ graphqlClient, user, companyId });
+```
+
+CRUD over the user's saved addresses, via `services.address`
+(`createAddress`, `updateAddress`, `deleteAddress`). All actions return
+`{ success, error? }` — never a throw.
+
+Address mutations are account-scoped: the user must be authenticated (the
+access token from `useAuth().login()` must be set), or the backend rejects
+them.

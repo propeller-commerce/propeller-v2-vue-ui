@@ -1,0 +1,89 @@
+---
+title: Nuxt & SSR
+---
+
+# Nuxt & SSR
+
+The package is a set of plain Vue 3 components. Vue's server renderer runs
+components on the server without any component-level annotation — there is
+no `"use client"` equivalent to deal with. A Nuxt 3 app can render the
+package's components server-side the same way it renders its own.
+
+## Three entry points
+
+| Import path                   | Contents                                              | Where |
+| ------------------------------ | ----------------------------------------------------- | ----- |
+| `propeller-v2-vue-ui`          | Components, composables, the provider, `createServices`, `toPlain` | App |
+| `propeller-v2-vue-ui/shared`   | `createServices`, `toPlain`, formatters, helpers, types | App or server context |
+| `propeller-v2-vue-ui/pure`     | SSR-safe presentational components — no composables, no browser APIs | App, SSR shell |
+
+The main entry pulls in the Vue component tree. The `/shared` entry is
+plain TypeScript with no Vue dependency — import the pure helpers and
+`createServices` from there when you want them in a Nuxt server route, a
+Nitro handler, or a build script, without pulling the components into that
+graph.
+
+The `/pure` entry re-exports a curated subset of components that are
+guaranteed SSR-safe: no composable calls, no `window`/`localStorage`/`document`
+access, no `onMounted` fetching. They produce identical output on the server
+and the client, so you can render them directly into a static shell —
+`<GridTitle>`, `<ProductPrice>`, `<ItemStock>`, `<OrderTotals>`, etc. —
+without wrapping them in a client-only boundary. Mirrors the React package's
+`/pure` entry component-for-component.
+
+## Fetching data on the server
+
+The package ships **no `/server` entry** — server-side GraphQL wiring
+(endpoint, API keys, cookie names, auth) is application-specific. To fetch
+Propeller data on the server, host a small module in your own app:
+
+```ts
+// server/propeller.ts — in YOUR Nuxt app
+import { GraphQLClient } from 'propeller-sdk-v2';
+import { createServices, toPlain } from 'propeller-v2-vue-ui/shared';
+
+export function createServerClient(accessToken?: string) {
+  return new GraphQLClient({
+    endpoint: process.env.PROPELLER_GRAPHQL_ENDPOINT!,
+    apiKey: process.env.PROPELLER_API_KEY!,
+    securityMode: 'direct',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+}
+
+export async function fetchProduct(productId: number, language = 'NL') {
+  const services = createServices(createServerClient());
+  const result = await services.product.getProduct({
+    productId,
+    language,
+    imageSearchFilters: {},
+    imageVariantFilters: {
+      transformations: [
+        { name: 'large', transformation: { width: 800, height: 800 } },
+      ],
+    },
+  });
+  return result ? toPlain(result) : null;
+}
+```
+
+> **Image transformations:** request at least one transformation in
+> `imageVariantFilters`. The backend only populates
+> `image.imageVariants[].url` for transformations you ask for — an empty
+> set returns images with no URLs.
+
+## The provider under SSR
+
+`providePropeller` is a normal Vue `provide`. It works during SSR — call it
+in your root component's `setup()`. The infra object carries the
+`graphqlClient` + `services`; build a request-scoped client on the server
+(so each request can carry its own auth token) rather than a module-level
+singleton.
+
+## Hydration
+
+The display components (`ProductPrice`, `Breadcrumbs`, …) take everything
+as props and render identically on the server and the client, so they
+hydrate cleanly. Interactive components (`AddToCart`, `CartIconAndSidebar`)
+attach their handlers on the client after hydration, as any Vue component
+does.

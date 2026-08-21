@@ -1,0 +1,66 @@
+---
+title: The SDK seam
+---
+
+# The SDK seam
+
+This is the one architectural idea to understand before using the package.
+
+## The package ships no GraphQL client
+
+There is **no** `graphqlClient` singleton exported from the package, and
+**no** hardcoded API endpoint. GraphQL transport is application-specific:
+
+- A Vite SPA may proxy requests through its dev server, which adds the API
+  key and handles auth.
+- A Nuxt app may call through a server route.
+- Another app may use a custom rewrite, a service worker, or a different
+  auth-token resolver.
+
+Baking a URL or an environment-variable convention into a component library
+would lock it to one app shape. So the package doesn't.
+
+## The contract: three steps
+
+1. **You construct the `GraphQLClient`** from `propeller-sdk-v2`, with your
+   endpoint, headers and auth resolver.
+2. **You call `createServices(client)`** once — it returns a typed
+   `Services` bundle (`product`, `cart`, `user`, `order`, …) keyed to that
+   client.
+3. **You install both** via `providePropeller({ graphqlClient, services, … })`.
+
+```ts
+import { GraphQLClient } from 'propeller-sdk-v2';
+import { createServices } from 'propeller-v2-vue-ui';
+
+const graphqlClient = new GraphQLClient({ endpoint: '/api/graphql', apiKey: '' });
+const services = createServices(graphqlClient);
+```
+
+Inside the provider, every component and composable reads the services via
+`useServices()` — they never instantiate the SDK themselves.
+
+## `createServices`
+
+A pure factory. It builds one bundle of SDK service instances and memoises
+it per client (via a `WeakMap`), so calling it again with the same client
+returns the same bundle. After login/logout the SDK mutates the client's
+headers in place — the cached services keep working without a rebuild.
+
+## `toPlain`
+
+The SDK returns class instances whose getters forward to underscore-prefixed
+backing fields (`_items`, `_firstName`). Anything that serialises them (JSON,
+reactivity diffing) sees the underscored shape. `toPlain(value)` recursively
+strips that prefix so downstream code sees the clean public type. Apply it
+once at the service boundary.
+
+## No server entry
+
+The package has **no `/server` entry**. Server-side wiring (endpoint, API
+keys, cookie names, auth) is just as application-specific as the client. If
+you fetch Propeller data in a Nuxt server context, host that code in your
+own app; `createServices` and `toPlain` are exported from
+`propeller-v2-vue-ui/shared` — a pure-TS entry with no Vue dependency — so
+you can build a services bundle around a server-side client without pulling
+the component tree into the server graph. See [Nuxt & SSR](/nuxt-ssr).

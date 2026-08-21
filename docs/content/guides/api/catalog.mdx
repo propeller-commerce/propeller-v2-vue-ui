@@ -1,0 +1,125 @@
+---
+title: Catalog & products
+---
+
+# Catalog & products
+
+Six composables cover catalog browsing and product detail:
+`useProductSearch`, `useProductInfo`, `useProductSpecs`, `useProductSlider`,
+`useProductBundles` and `useMenu`. This page explains how each reaches the
+GraphQL backend.
+
+Signatures are in the [API reference](/api) — e.g.
+[`useProductSearch`](/api/composables/vue/useProductSearch/),
+[`useProductInfo`](/api/composables/vue/useProductInfo/).
+
+## `useProductSearch`
+
+Powers category listing pages and search results — filtering, sorting,
+pagination.
+
+```ts
+const search = useProductSearch({ graphqlClient, categoryId, language: ref('NL') });
+```
+
+| Concern | SDK calls |
+| --- | --- |
+| Category context | `services.category.getCategory` |
+| Product results | `services.product.search` |
+
+### Race-condition handling
+
+Search parameters change fast (a user typing, toggling facets). The
+composable tags each fetch and **discards stale responses** — when a
+response returns, it is dropped if a newer request has been issued since.
+This prevents an earlier, slower request from overwriting newer results.
+You get this for free; the `SearchBar` component debounces keystrokes
+before they reach the composable.
+
+### Pagination
+
+Pagination state is managed by the shared `usePagination` composable
+(current page, total pages, per-page). `useProductSearch` feeds
+`product.search` offsets/limits from it and updates totals from each
+response.
+
+## `useProductInfo`
+
+Product (or cluster) detail-page data.
+
+```ts
+const info = useProductInfo({ graphqlClient, productId, language: ref('NL') });
+```
+
+It performs **sequential** fetches:
+
+1. `services.orderlist.getOrderlists` — order-list context for the product
+   (needed for B2B price tiers; only when a user + company are present).
+2. `services.product.getProduct` — the product, with attributes.
+3. For a configurable product: `services.cluster.getClusterConfig` then
+   `services.cluster.getCluster` (the config drives which attribute names
+   to request).
+
+For a cluster it follows a `cluster → defaultProduct` fallback chain for
+name, SKU, price and image, so the detail page can still render when the
+cluster itself is sparse.
+
+## `useProductSpecs`
+
+Extracts and groups a product's attributes into a spec table.
+
+```ts
+const specs = useProductSpecs({ graphqlClient, product });
+```
+
+Calls `services.product.getProduct` for the full attribute set, then groups
+values with the shared `attributeExtractor` utilities
+([`extractAttributeValues`](/api/composables/shared/utils/attributeExtractor/functions/extractAttributeValues),
+[`collectAttributeValues`](/api/composables/shared/utils/attributeExtractor/functions/collectAttributeValues)).
+
+## `useProductSlider`
+
+Cross-sell / up-sell / related-product carousels.
+
+```ts
+const slider = useProductSlider({ graphqlClient, productId });
+```
+
+Calls `services.crossupsell.getOtherProducts` with a
+`FetchCrossupsellsInput` describing the relationship type. Used by the
+`ProductSlider` component.
+
+## `useProductBundles`
+
+Bundle offers attached to a product.
+
+```ts
+const bundles = useProductBundles({ graphqlClient, product });
+```
+
+Calls `services.bundle` for bundle composition and pricing, and reuses
+[`initCart`](/api/composables/shared/utils/cartInit/functions/initCart) when a bundle is added to the cart
+(see [Cart & checkout](/guides/api/cart)).
+
+## `useMenu`
+
+The category navigation tree.
+
+```ts
+const menu = useMenu({ graphqlClient, rootCategoryId, depth: 3 });
+```
+
+`useMenu` is the one composable that issues a **raw GraphQL query** via
+`graphqlClient.request(...)` rather than going through a Service class —
+the recursive depth-configurable category query has no dedicated SDK
+method. Localized `name` / `slug` arrays are flattened to per-language
+strings.
+
+### Caching
+
+The category tree changes rarely, so `useMenu` **caches the result in
+`localStorage` with a 12-hour TTL** under a user-specific key. A page load
+within the TTL renders the menu from cache with no network call; after it
+expires the next load re-fetches and re-caches. The composable also exposes
+a way to clear that key to force a refresh. Override the window with
+`cacheTtlMs`.

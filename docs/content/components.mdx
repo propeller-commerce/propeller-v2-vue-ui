@@ -1,0 +1,145 @@
+---
+title: Component reference
+---
+
+# Component reference
+
+The package exports 60 components. This page is the catalogue; for the
+**live preview and the auto-generated prop table** of any component, open
+it in [Storybook](/storybook) — every component has a story, and the
+Storybook "Docs" tab renders its full `*Props` interface from the
+TypeScript source.
+
+:::note Why the prop tables live in Storybook
+The components are Vue Single-File Components (`.vue`). The generated
+[API reference](/api) is produced by TypeDoc, which cannot parse SFCs — so
+it documents the package's *headless* surface (composables, the provider,
+the SDK seam, utilities and types) and **not** the component props. Each
+component's props are documented in Storybook instead.
+:::
+
+Components that need infrastructure (the SDK services, the current user)
+resolve it from the Propeller provider (`providePropeller`) — see
+[Getting started](/getting-started). For how the composables behind these
+components reach the GraphQL backend, see the
+[API integration guides](/guides/api/overview).
+
+## Product
+
+| Component | What it renders |
+| --- | --- |
+| `ProductCard` | Full product card — image, badges, name, SKU, price, favourite, embedded AddToCart |
+| `ProductGrid` | Responsive product/cluster grid with internal fetching, skeleton, empty state, pagination |
+| `ProductInfo` | Product headline block — name, SKU, price, stock, short description |
+| `ProductPrice` | Price display — gross/net, discounts, tax-inclusive toggle |
+| `ProductBulkPrices` | Quantity-tiered price table |
+| `ProductGallery` | Image gallery — main image, thumbnails, zoom, lightbox |
+| `ProductTabs` | Tab bar wrapping description / specs / downloads / videos |
+| `ProductDescription` | Long description, with collapse/expand |
+| `ProductShortDescription` | One-line summary |
+| `ProductSpecifications` | Attribute/spec table |
+| `ProductDownloads` | Downloadable documents |
+| `ProductVideos` | Embedded videos |
+| `ProductSlider` | Horizontal product carousel (cross-sells, related) |
+| `ProductBundles` | Bundle offers for a product |
+| `AddToCart` | Quantity stepper + add button |
+| `AddToFavorite` | Favourite toggle with a list-picker modal |
+| `ItemStock` | Stock-availability badge |
+
+## Cluster
+
+| Component | What it renders |
+| --- | --- |
+| `ClusterCard` | Product-cluster card |
+| `ClusterInfo` | Cluster headline info |
+| `ClusterOptions` | Selectable option groups |
+| `ClusterConfigurator` | Configuration picker narrowing candidate products |
+
+## Grid
+
+| Component | What it renders |
+| --- | --- |
+| `GridTitle` | Category / search heading |
+| `GridToolbar` | Sort, per-page, view-toggle, active-filter badges |
+| `GridFilters` | Accordion filter sidebar — price slider + attribute facets |
+| `GridPagination` | Pagination bar (compact or full) |
+
+## Cart & checkout
+
+| Component | What it renders |
+| --- | --- |
+| `CartOverview` | Full editable cart |
+| `CartItem` | One cart line — image, qty stepper, total, remove |
+| `CartSummary` | Cart totals panel + checkout/quote actions |
+| `CartIconAndSidebar` | Header cart icon + slide-out sidebar |
+| `ItemsOverview` | Read-only cart line list (review / confirmation) |
+| `ActionCode` | Promo/action-code apply + remove |
+| `CartPaymethods` | Payment-method tiles |
+| `CartCarriers` | Shipping-carrier tiles |
+| `DeliveryDate` | Expected delivery date, optional date picker |
+
+## Address
+
+| Component | What it renders |
+| --- | --- |
+| `AddressCard` | A single address, with per-field show/hide |
+| `AddressSelector` | Modal address picker for logged-in users |
+
+## Order & quote
+
+| Component | What it renders |
+| --- | --- |
+| `OrderList` | Paginated order table with search/filter |
+| `OrderSummary` | Order headline facts |
+| `OrderItemCard` | One order line |
+| `OrderTotals` | Order totals block |
+| `OrderShipments` | Shipment / tracking info |
+| `OrderActions` | Per-order actions (PDF, re-order) |
+| `QuoteActions` | Accept-quotation button + T&C checkbox |
+
+## Account & auth
+
+| Component | What it renders |
+| --- | --- |
+| `AccountIconAndMenu` | Header account control / account-page sidebar |
+| `CompanySwitcher` | Active-company switcher for multi-company contacts |
+| `UserDetails` | User profile block |
+| `LoginForm` | Email/password sign-in |
+| `RegisterForm` | Account registration |
+| `ForgotPassword` | Password-reset request |
+
+## Favourites
+
+| Component | What it renders |
+| --- | --- |
+| `FavoriteLists` | The user's favourite lists |
+| `FavoriteListItem` | One row of a favourites list |
+| `FavoriteListDetails` | The contents of one favourite list |
+
+## Navigation
+
+| Component | What it renders |
+| --- | --- |
+| `Menu` | Category navigation tree |
+| `SearchBar` | Product search with type-ahead results |
+| `Breadcrumbs` | Category trail |
+
+## Purchase authorization (B2B)
+
+| Component | What it renders |
+| --- | --- |
+| `PurchaseAuthorizationConfigurator` | Manage a company's PA rules |
+| `PurchaseAuthorizationRequests` | Carts awaiting authorization |
+
+## Category
+
+| Component | What it renders |
+| --- | --- |
+| `CategoryDescription` | Category long description, with collapse |
+| `CategoryShortDescription` | Category short description |
+
+## Display helper
+
+| Component | What it renders |
+| --- | --- |
+| `PriceToggle` | Incl./excl. VAT switch (uncontrolled — reports via callback) |

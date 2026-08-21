@@ -1,0 +1,14 @@
+{
+  // Mirrors the original propeller-vue app tsconfig so the package
+  // typechecks under the exact rules the components were written against.
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": false
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue"],
+  "exclude": ["node_modules", "dist", "storybook-static", "docs"]
+}

@@ -1,0 +1,16 @@
+{
+  "//": "tsconfig used only by the docs TypeDoc run (docs/scripts/gen-api.js). It extends the base config but narrows the program to runtime source — test, mock and Storybook files import dev-only deps (vitest, @storybook/vue3-vite) that are not package dependencies and must not be part of the generated API reference. TypeDoc cannot parse `.vue` SFCs, so the docs entry points are the pure-TS composables / context / lib / shared files only; the `.vue` components' prop tables live in Storybook. `src/index.ts` is excluded for the same reason: it re-exports named types out of `.vue` files (e.g. `MachineCardProps`), which the `*.vue` shim cannot express — it declares only a default export — so a plain `tsc` program fails on them even though `vue-tsc` resolves them natively. It is not an entry point; it was only ever pulled in by the `src/**/*.ts` include.",
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "storybook-static",
+    "src/**/__tests__/**",
+    "src/**/__mocks__/**",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.stories.ts",
+    "src/index.ts"
+  ]
+}
