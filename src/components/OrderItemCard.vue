@@ -121,11 +121,18 @@
                line total `orderItem.priceTotal`. We pass `orderItem.product.price`
                (catalog price) to the injected component to honour the contract;
                consumers who need the line total can compute their own. The
-               default (uninjected) path is unchanged. -->
+               default (uninjected) path is unchanged.
+
+               The `product.price` guard is what keeps a product-less line
+               priced: an order item whose product came back null (hidden,
+               withdrawn, deleted from the catalog) has no catalog price to hand
+               the slot, and the slot renders blank when given `undefined` —
+               silently dropping the line total from the row. Fall through to
+               the order item's own `priceTotal` instead. -->
           <component
-            v-if="props.priceComponent"
+            v-if="props.priceComponent && orderItem?.product?.price"
             :is="PriceImpl"
-            :price="orderItem?.product?.price"
+            :price="orderItem.product.price"
             :currency="currency"
             :labels="labels"
           />
@@ -189,7 +196,19 @@ import DefaultProductPrice from './ProductPrice.vue';
 import DefaultItemStock from './ItemStock.vue';
 
 export interface OrderItemCardProps {
-  /** The order item to display */
+  /**
+   * The order item to display.
+   *
+   * `orderItem.product` is optional and really can be absent: a product that is
+   * hidden, withdrawn or deleted from the catalog still appears on the orders
+   * and quotes it was sold on, but the API returns no product record for it.
+   * Every product-derived value below therefore falls back to the order item,
+   * which carries its own snapshot of the line — name, sku, quantity and prices
+   * — taken when the order was placed. Such a row renders as plain text: the
+   * placeholder thumbnail, the untranslated `orderItem.name` (there are no
+   * localized names to resolve), and no PDP link (there are no slugs to build
+   * one from).
+   */
   orderItem: OrderItem;
 
   /** Currency symbol to display. Defaults to '€'. */

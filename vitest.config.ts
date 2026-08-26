@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config';
+import vue from '@vitejs/plugin-vue';
 
 /**
  * Vitest configuration for propeller-v2-vue-ui.
@@ -8,11 +9,19 @@ import { defineConfig } from 'vitest/config';
  * extraction, etc.). These are framework-free functions — no Vue, no DOM,
  * no SDK calls — so the `node` environment is sufficient and fast.
  *
- * Component tests (which would need a mock-SDK + a provider wrapper, and the
- * `jsdom` environment) are intentionally NOT in scope here — components are
- * verified by the consumer's Playwright e2e suite via the downstream CI gate.
+ * Component tests that would need a mock-SDK + a provider wrapper, and the
+ * `jsdom` environment, are intentionally NOT in scope here — those components
+ * are verified by the consumer's Playwright e2e suite via the downstream CI
+ * gate.
+ *
+ * Pure display components are the exception: they read no context and call no
+ * service, so `vue/server-renderer` output IS their behaviour and asserting on
+ * it needs none of the above — only `@vitejs/plugin-vue` below to compile the
+ * SFC. No new dependency, and it keeps a regression like a line total silently
+ * disappearing from an order row out of the e2e suite's lap.
  */
 export default defineConfig({
+  plugins: [vue()],
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

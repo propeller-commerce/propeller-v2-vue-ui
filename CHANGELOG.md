@@ -8,6 +8,34 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.18.1] - 2026-08-26
+
+The Vue half of the fix shipped in react-ui 0.19.1, so the two surfaces stay in
+step.
+
+### Fixed
+
+- **Order and quote lines whose product is gone from the catalog.** A product
+  that is hidden, withdrawn or deleted still appears on every order and quote it
+  was sold on, but the API returns no product record for it — `orderItem.product`
+  is simply absent. `OrderItemCard` already fell back to the order item's own
+  snapshot of the line for the name, sku, thumbnail and link, but not for the
+  price: an injected `priceComponent` was handed `product.price`, rendered blank
+  on `undefined`, and the line total silently disappeared from the row. Such a
+  line now falls through to the order item's `priceTotal`. Rows with a product
+  are unaffected — the slot is still used whenever there is a catalog price to
+  give it.
+- **`OrderShipments` printed `-` for the SKU** of a shipment line whose product
+  is missing, having read `product.sku` with no fallback. It now reads the order
+  item's own `sku`, which is stored on the order and always there.
+
+### Internal
+
+- Vitest now compiles SFCs (`@vitejs/plugin-vue`, already a dev dependency), so
+  pure display components can be asserted on through `vue/server-renderer`
+  without jsdom or a provider wrapper. Component tests that need a mock SDK stay
+  out of scope here, as before.
+
 ## [0.18.0] - 2026-08-26
 
 The Vue half of the storefront-integration batch shipped in react-ui 0.19.0, so

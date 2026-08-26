@@ -1,6 +1,6 @@
 {
   "name": "@propeller-commerce/propeller-v2-vue-ui",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "Vue 3 component library for Propeller Commerce — ready-made e-commerce UI, headless composables, and SDK glue.",
   "license": "MIT",
   "type": "module",

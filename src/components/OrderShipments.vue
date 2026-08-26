@@ -235,7 +235,11 @@
                                 {{
                                   getOrderItemForShipmentItem(
                                     shipmentItem as ShipmentItem,
-                                  )?.product?.sku || "-"
+                                  )?.product?.sku ||
+                                  getOrderItemForShipmentItem(
+                                    shipmentItem as ShipmentItem,
+                                  )?.sku ||
+                                  "-"
                                 }}
                               </template>
 
