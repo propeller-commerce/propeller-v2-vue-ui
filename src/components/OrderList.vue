@@ -514,10 +514,25 @@
     </template>
 
     <template v-else>
+      <!--
+        A centred line of text collapsed the list to one row and then snapped it
+        back, which is what made a language switch on the account pages look
+        broken. Skeleton rows hold the layout instead.
+      -->
       <div
-        class="propeller-order-list__loading p-8 text-center text-muted-foreground"
+        class="propeller-order-list__loading p-4"
+        aria-busy="true"
+        :aria-label="getLabel('loading', 'Loading orders...')"
       >
-        {{ getLabel("loading", "Loading orders...") }}
+        <div
+          v-for="index in 3"
+          :key="index"
+          class="propeller-order-list__skeleton-row flex items-center gap-4 py-4 border-b border-border last:border-b-0 animate-pulse"
+        >
+          <div class="propeller-order-list__skeleton-line h-4 bg-surface-hover rounded w-24" />
+          <div class="propeller-order-list__skeleton-line h-4 bg-surface-hover rounded w-32" />
+          <div class="propeller-order-list__skeleton-line h-4 bg-surface-hover rounded w-20 ml-auto" />
+        </div>
       </div>
     </template>
   </div>
@@ -530,6 +545,7 @@ import { Contact, Customer, GraphQLClient, Order, OrderSortField, OrderType, Sor
 
 import { useOrders, type OrderSearchForm } from "../composables/vue/useOrders";
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 
@@ -742,7 +758,7 @@ function formatDate(
 function formatPrice(price: number): ReturnType<OrderListState["formatPrice"]> {
   if (props.formatPrice) return props.formatPrice(price);
   if (!price) return "-";
-  return _formatPrice(price, { symbol: infra.currency ?? "€" });
+  return _formatPrice(price, { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 // Map the raw backend status to a localized label; unknown → raw value.
 function statusLabel(status: string): string {

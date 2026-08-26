@@ -537,6 +537,7 @@ import { ref, computed, type Component } from "vue";
 import { Cluster, AttributeResult } from "@propeller-commerce/propeller-sdk-v2";
 import ItemStock from "./ItemStock.vue";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getClusterImageUrl as _getClusterImageUrl,
   getClusterSku as _getClusterSku,
@@ -821,7 +822,7 @@ function getClusterPrice(): ReturnType<ClusterCardState["getClusterPrice"]> {
   const useTax: boolean = resolvedIncludeTax.value;
   const value: number | undefined = useTax ? priceObj?.net : priceObj?.gross;
   if (!value && value !== 0) return "";
-  return _formatPrice(Number(value), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(value), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getLabel(
   key: string,

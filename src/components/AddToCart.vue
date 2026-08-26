@@ -321,6 +321,16 @@
                 </template>
               </div>
             </template>
+            <template v-if="grantedBonusItems.length > 0">
+              <div
+                class="propeller-add-to-cart__modal-bonus-items mt-4 pt-4 border-t border-border-subtle"
+              >
+                <CartBonusItems
+                  :bonusItems="grantedBonusItems"
+                  :labels="bonusItemsLabels"
+                />
+              </div>
+            </template>
           </div>
           <div
             class="propeller-add-to-cart__modal-actions flex gap-3 px-6 py-4 border-t border-border-subtle"
@@ -376,7 +386,9 @@ import { onMounted, ref, computed, type Component } from "vue";
 import { CartChildItemInput, GraphQLClient, Product, Cart, Contact, Customer, TransformationsInput, MediaImageProductSearchInput, CartMainItem, CartBaseItem, Cluster, PurchaseAuthorizationConfig } from "@propeller-commerce/propeller-sdk-v2";
 import { useCart } from "../composables/vue/useCart";
 import { useInfraProps } from '../composables/vue/useInfraProps';
+import CartBonusItems from './CartBonusItems.vue';
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getProductImageUrl as _getProductImageUrl,
   getProductSku as _getProductSku,
@@ -461,6 +473,12 @@ export interface AddToCartProps {
   /**
    * Callback triggered after adding the product to cart.
    */
+  /**
+   * Labels for the bonus-items block in the success modal.
+   * Keys: `title` ('Bonus items'), `sku` ('SKU').
+   */
+  bonusItemsLabels?: Record<string, string>;
+
   afterAddToCart?: (cart: Cart, item?: CartMainItem) => void;
 
   /**
@@ -613,6 +631,10 @@ const { cart, loading, checkoutAllowed, addItem, getMinQuantity, getStep } =
 const quantity = ref<AddToCartState["quantity"]>(1);
 const success = ref<AddToCartState["success"]>(false);
 const modalVisible = ref<AddToCartState["modalVisible"]>(false);
+// Bonus items this add earned. A promotion that grants a free product said
+// nothing at the moment it fired — the shopper only found it by opening the
+// cart later, which is exactly when it can no longer influence them.
+const grantedBonusItems = ref<CartBaseItem[]>([]);
 const toastMessage = ref<AddToCartState["toastMessage"]>("");
 const toastType = ref<AddToCartState["toastType"]>("");
 const toastVisible = ref<AddToCartState["toastVisible"]>(false);
@@ -677,7 +699,7 @@ function getProductPrice(): ReturnType<AddToCartState["getProductPrice"]> {
       ? props.price
       : (props.product as Product)?.price?.gross;
   if (!price && price !== 0) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 async function handleAddToCart(): ReturnType<
   AddToCartState["handleAddToCart"]
@@ -685,6 +707,9 @@ async function handleAddToCart(): ReturnType<
   if (!infra.graphqlClient) return;
   if (props.beforeAddToCart && !props.beforeAddToCart()) return;
   success.value = false;
+  // Snapshot before the mutation so the modal can tell which bonus items this
+  // particular add earned.
+  const cartBeforeAdd = cart.value ?? null;
   const result = await addItem({
     product: props.product,
     cluster: props.cluster,
@@ -698,6 +723,7 @@ async function handleAddToCart(): ReturnType<
     createCart: props.createCart,
     afterAddToCart: (resultCart, item) => {
       addedCartItem.value = resolveAddedItem(resultCart, item ?? null);
+      grantedBonusItems.value = newBonusItems(cartBeforeAdd, resultCart);
       props.afterAddToCart?.(resultCart, item ?? undefined);
     },
   });
@@ -745,7 +771,7 @@ function getModalPrice(): ReturnType<AddToCartState["getModalPrice"]> {
     const price = useTax
       ? addedCartItem.value.totalSumNet
       : addedCartItem.value.totalSum;
-    return _formatPrice(Number(price), { symbol: props.currency ?? "€" });
+    return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
   }
   return getProductPrice();
 }
@@ -815,12 +841,34 @@ function getChildItemPrice(
   const useTax: boolean =
     props.includeTax !== undefined ? !!props.includeTax : includeTax.value;
   const value = useTax ? child.totalSumNet : child.totalSum;
-  return _formatPrice(Number(value ?? 0), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(value ?? 0), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function closeModal(): ReturnType<AddToCartState["closeModal"]> {
   modalVisible.value = false;
   success.value = false;
   addedCartItem.value = null;
+  grantedBonusItems.value = [];
+}
+
+/**
+ * The bonus items present after the add that were not there before it.
+ *
+ * With no `before` cart to compare against — the very first add after a page
+ * load, where the hook has not resolved a cart yet — every bonus item in the
+ * cart is reported. That over-reports on a cart that already held bonus items;
+ * showing them is still better than showing nothing.
+ */
+function newBonusItems(before: Cart | null, after: Cart | undefined): CartBaseItem[] {
+  const granted = (after as any)?.bonusItems ?? [];
+  if (granted.length === 0) return [];
+  const previous = (before as any)?.bonusItems;
+  if (!previous) return granted;
+  const seen = new Map(
+    previous.map((item: CartBaseItem) => [item.itemId, item.quantity ?? 0]),
+  );
+  return granted.filter(
+    (item: CartBaseItem) => (item.quantity ?? 0) > ((seen.get(item.itemId) as number) ?? 0),
+  );
 }
 function getLabel(
   key: string,

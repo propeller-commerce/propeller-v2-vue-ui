@@ -123,6 +123,7 @@ import { computed, ref } from "vue";
 
 import { ClusterOption, Contact, Customer, Product, YesNo } from "@propeller-commerce/propeller-sdk-v2";
 import { getLabel as _getLabel, isContentHidden, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { getProductImageUrl as _getProductImageUrl } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
@@ -254,7 +255,7 @@ function getLabel(
 function formatPrice(
   price: number,
 ): ReturnType<ClusterOptionsState["formatPrice"]> {
-  return _formatPrice(price, { symbol: infra.currency ?? "\u20AC" });
+  return _formatPrice(price, { symbol: infra.currency ?? "\u20AC", locale: localeForLanguage(infra.language) });
 }
 function getProductName(
   product: Product,

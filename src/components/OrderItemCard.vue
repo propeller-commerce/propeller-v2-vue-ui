@@ -183,6 +183,7 @@
 import type { OrderItem } from "@propeller-commerce/propeller-sdk-v2";
 import { computed, type Component } from "vue";
 import { formatPrice as _formatPrice, getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import DefaultProductPrice from './ProductPrice.vue';
 import DefaultItemStock from './ItemStock.vue';
@@ -343,18 +344,31 @@ const productSlug = computed(() => {
   // here already resolved by language.
   return getLanguageString(props.orderItem?.product?.slugs, infra.language || "NL", "");
 });
+// Build the href with the host's own URL builders when the configuration
+// supplies them — they are what applies the storefront's locale prefix (and its
+// configured URL pattern). The literals are only a fallback for a bare mount;
+// on a prefixed storefront they emit links into the default language.
+const hostUrls = computed(
+  () => (infra.configuration as { urls?: Record<string, any> } | undefined)?.urls,
+);
 const clusterUrl = computed(() => {
   const cluster = (props.orderItem?.product as any)?.cluster;
   if (!cluster) return "";
   const id = cluster.clusterId ?? cluster.urlId;
   const slug = getLanguageString(cluster.slugs, infra.language || "NL", "");
   if (!id || !slug) return "";
-  return "/cluster/" + id + "/" + slug;
+  return (
+    hostUrls.value?.getClusterUrl?.(cluster, infra.language) ||
+    "/cluster/" + id + "/" + slug
+  );
 });
 const productUrl = computed(() => {
   if (clusterUrl.value) return clusterUrl.value;
   if (productId.value && productSlug.value) {
-    return "/product/" + productId.value + "/" + productSlug.value;
+    return (
+      hostUrls.value?.getProductUrl?.(props.orderItem?.product, infra.language) ||
+      "/product/" + productId.value + "/" + productSlug.value
+    );
   }
   return "";
 });
@@ -396,7 +410,7 @@ function formatItemPrice(
     return props.formatPrice(price);
   }
   if (!price && price !== 0) return "-";
-  return _formatPrice(price, { symbol: props.currency ?? "€" });
+  return _formatPrice(price, { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function formatDiscountDisplay(): ReturnType<
   OrderItemCardState["formatDiscountDisplay"]

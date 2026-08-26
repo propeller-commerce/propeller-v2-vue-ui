@@ -478,6 +478,7 @@ import { computed, onMounted, ref } from "vue";
 import { Bundle, BundleCondition, BundleItem, Cart, Contact, Customer, GraphQLClient, Product } from "@propeller-commerce/propeller-sdk-v2";
 import { useProductBundles } from "../composables/vue/useProductBundles";
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { getProductImageUrl as _getProductImageUrl } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
@@ -706,7 +707,7 @@ function getLabel(
 function formatPrice(
   value: number,
 ): ReturnType<ProductBundlesState["formatPrice"]> {
-  return _formatPrice(Number(value), { symbol: infra.currency ?? "€" });
+  return _formatPrice(Number(value), { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getBundlePrice(
   bundle: Bundle,

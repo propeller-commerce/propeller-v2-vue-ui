@@ -74,6 +74,7 @@
 import { computed } from "vue";
 import { Cart, CartBaseItem } from "@propeller-commerce/propeller-sdk-v2";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { getLocalizedValue as _getLocalizedValue } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from "../composables/vue/useInfraProps";
@@ -119,6 +120,6 @@ function getItemImageUrl(item: CartBaseItem): string {
 }
 function getItemTotal(item: CartBaseItem): string {
   const total = infra.includeTax ? item.totalPriceNet : item.totalPrice;
-  return _formatPrice(Number(total ?? 0), { symbol: infra.currency ?? "€" });
+  return _formatPrice(Number(total ?? 0), { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 </script>

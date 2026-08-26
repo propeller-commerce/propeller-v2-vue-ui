@@ -1,5 +1,7 @@
 ﻿<template>
-  <div class="propeller-cart-summary w-full bg-card space-y-3">
+  <div
+    :class="`propeller-cart-summary w-full bg-card p-6 rounded-[var(--radius-container)] shadow space-y-3 ${className || ''}`"
+  >
     <h2 class="propeller-cart-summary__title text-xl font-bold mb-4">{{ title }}</h2>
     <template v-if="showSubtotal">
       <div class="propeller-cart-summary__row flex justify-between text-muted-foreground" data-row="subtotal">
@@ -101,12 +103,16 @@ import { computed, ref } from "vue";
 import { Cart, Contact, Customer, GraphQLClient, PurchaseRole } from '@propeller-commerce/propeller-sdk-v2';
 import { useCart } from '../composables/vue/useCart';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface CartSummaryProps {
   /** The shopping cart used to populate the cart summary data */
   cart: Cart;
+
+  /** Extra classes for the panel root, appended after the defaults. */
+  className?: string;
 
   /** Currency symbol to display. Defaults to '€'. */
   currency?: string;
@@ -324,7 +330,7 @@ function formatItemPrice(price: number): ReturnType<CartSummaryState['formatItem
   if (props.formatPrice) {
     return props.formatPrice(price);
   }
-  return _formatPrice(price || 0, { symbol: infra.currency ?? '€' });
+  return _formatPrice(price || 0, { symbol: infra.currency ?? '€', locale: localeForLanguage(infra.language) });
 }
 function handleCheckoutClick(): ReturnType<CartSummaryState['handleCheckoutClick']> {
   if (props.onCheckoutButtonClick) {

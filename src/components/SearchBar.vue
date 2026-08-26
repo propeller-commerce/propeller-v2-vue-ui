@@ -22,7 +22,7 @@
         ><input
           type="search"
           autoComplete="off"
-          class="propeller-search-bar__input w-full pl-10 pr-10 py-2 bg-white/95 border border-white/20 rounded-[var(--radius-container)] focus:outline-none focus:ring-2 focus:ring-secondary placeholder:text-muted-foreground"
+          class="propeller-search-bar__input w-full pl-10 pr-10 py-2 bg-card border border-input rounded-[var(--radius-container)] focus:outline-none focus:ring-2 focus:ring-secondary placeholder:text-muted-foreground"
           :placeholder="placeholder"
           :value="searchTerm"
           @input="async (e) => handleInputChange((e.target as HTMLInputElement).value)"
@@ -123,6 +123,7 @@ import {
 } from '@propeller-commerce/propeller-sdk-v2';
 import { useProductSearch } from '../composables/vue/useProductSearch';
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 // No host-config import: result URLs are built from the `configuration`
@@ -398,7 +399,7 @@ function formatItemPrice(price: number): ReturnType<SearchBarState['formatItemPr
   if (props.formatPrice) {
     return props.formatPrice(price);
   }
-  return _formatPrice(price || 0, { symbol: infra.currency ?? '€' });
+  return _formatPrice(price || 0, { symbol: infra.currency ?? '€', locale: localeForLanguage(props.language) });
 }
 // Match ProductPrice: the toggle picks which value leads. SDK mapping —
 // net = incl. VAT, gross = excl. VAT. Default (includeTax undefined) is excl.

@@ -82,6 +82,13 @@ export interface UseCartReturn {
   addItem: (
     options: AddItemOptions,
   ) => Promise<Result<{ cart: Cart; item: CartMainItem | null }, string>>;
+  /**
+   * Adds several products in one call, sequentially, threading the resolved
+   * cart id from each add into the next. Stops at the first failure.
+   */
+  addItems: (
+    items: AddItemOptions[],
+  ) => Promise<Result<{ cart: Cart; items: (CartMainItem | null)[] }, string>>;
   updateItemQuantity: (cartItemId: string, quantity: number) => Promise<Cart | undefined>;
   updateItemNotes: (cartItemId: string, notes: string, debounceMs?: number) => void;
   deleteItem: (cartItemId: string) => Promise<Cart | undefined>;
@@ -211,6 +218,30 @@ export function useCart(options: UseCartOptions): UseCartReturn {
       error.value = msg;
       return err(msg);
     } finally { loading.value = false; }
+  }
+
+  /**
+   * Adds several products in one call, sequentially, threading each add's
+   * resolved cart id into the next so the first may create the cart and the
+   * rest land in it. Stops at the first failure and returns that error rather
+   * than continuing into a half-filled basket.
+   *
+   * "Add this whole set to the basket" is a normal requirement (kits, re-order,
+   * recipe packs) and there was no bulk call, so every consumer wrote the loop.
+   */
+  async function addItems(
+    items: AddItemOptions[],
+  ): Promise<Result<{ cart: Cart; items: (CartMainItem | null)[] }, string>> {
+    const added: (CartMainItem | null)[] = [];
+    let lastCart: Cart | null = null;
+    for (const item of items) {
+      const result = await addItem({ createCart: true, ...item });
+      if (!result.ok) return err(result.error);
+      lastCart = result.data.cart;
+      added.push(result.data.item);
+    }
+    if (!lastCart) return err('No items to add');
+    return ok({ cart: lastCart, items: added });
   }
 
   async function updateItemQuantity(cartItemId: string, quantity: number): Promise<Cart | undefined> {
@@ -363,5 +394,5 @@ export function useCart(options: UseCartOptions): UseCartReturn {
     } catch { return []; }
   }
 
-  return { cart, cartId, loading, error, checkoutAllowed, resolveCart, fetchActiveCart, addItem, updateItemQuantity, updateItemNotes, deleteItem, addActionCode, removeActionCode, requestAuthorization, processCart, getCrossupsells, getMinQuantity, getStep };
+  return { cart, cartId, loading, error, checkoutAllowed, resolveCart, fetchActiveCart, addItem, addItems, updateItemQuantity, updateItemNotes, deleteItem, addActionCode, removeActionCode, requestAuthorization, processCart, getCrossupsells, getMinQuantity, getStep };
 }

@@ -21,7 +21,7 @@
           <div class="relative flex-1">
             <span
               class="propeller-grid-filters__price-currency absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-foreground-subtle pointer-events-none"
-              >€</span
+              >{{ currencySymbol }}</span
             ><input
               type="number"
               class="propeller-grid-filters__price-input w-full pl-6 pr-2 h-8 rounded-[var(--radius-control)] border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-secondary"
@@ -40,7 +40,7 @@
           <div class="relative flex-1">
             <span
               class="propeller-grid-filters__price-currency absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-foreground-subtle pointer-events-none"
-              >€</span
+              >{{ currencySymbol }}</span
             ><input
               type="number"
               class="propeller-grid-filters__price-input w-full pl-6 pr-2 h-8 rounded-[var(--radius-control)] border border-border bg-card text-sm focus:outline-none focus:ring-1 focus:ring-secondary"
@@ -237,12 +237,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from 'vue';
 
 import { Contact, Customer, AttributeFilter } from "@propeller-commerce/propeller-sdk-v2";
 import { getLabel as _getLabel, isContentHidden, type Availability, MIN_STOCK_THRESHOLD } from "@propeller-commerce/propeller-v2-core-ui";
+import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface GridFiltersProps {
+  /** Currency symbol shown in the price-range inputs. Resolved from <PropellerProvider> when omitted; defaults to '€'. */
+  currency?: string;
+
   /**
    * Attribute filter definitions from the ProductGrid API response.
    * Each entry describes one filterable attribute (e.g. colour, brand, size).
@@ -378,6 +382,10 @@ const props = withDefaults(defineProps<GridFiltersProps>(), {
   collapsed: true,
   showAvailabilityFilter: false,
 });
+
+// The glyph was a literal euro, so a non-euro shop had no handle on it.
+const infra = useInfraProps(props);
+const currencySymbol = computed(() => (infra.currency as string | undefined) ?? '€');
 const selectedFilters = ref<GridFiltersState["selectedFilters"]>({});
 const currentMin = ref<GridFiltersState["currentMin"]>(0);
 const currentMax = ref<GridFiltersState["currentMax"]>(9999);

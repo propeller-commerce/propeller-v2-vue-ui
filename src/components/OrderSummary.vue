@@ -255,6 +255,7 @@
 import type { Order } from "@propeller-commerce/propeller-sdk-v2";
 import { computed } from "vue";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { getCountryName as _getCountryName } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
@@ -448,7 +449,7 @@ function formatItemPrice(
   if (props.formatPrice) {
     return props.formatPrice(price);
   }
-  return _formatPrice(price || 0, { symbol: infra.currency ?? "€" });
+  return _formatPrice(price || 0, { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 function getLabel(
   key: string,

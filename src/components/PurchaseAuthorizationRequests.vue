@@ -347,6 +347,7 @@ import { computed, ref } from "vue";
 import { usePurchaseAuthorizationRequests } from "../composables/vue/usePurchaseAuthorization";
 import { useInfraProps } from "../composables/vue/useInfraProps";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
 
@@ -557,6 +558,6 @@ function formatDate(dateStr: string): string {
 function formatPrice(price: number): string {
   if (props.formatPrice) return props.formatPrice(price);
   if (!price) return "-";
-  return _formatPrice(price, { symbol: props.currency ?? "€" });
+  return _formatPrice(price, { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 </script>

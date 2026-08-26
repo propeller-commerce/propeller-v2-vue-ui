@@ -676,6 +676,7 @@ import AddToCart from "./AddToCart.vue";
 import ItemStock from "./ItemStock.vue";
 import ProductPriceDisplay from "./ProductPrice.vue";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getProductImageUrl as _getProductImageUrl,
   getProductSku as _getProductSku,
@@ -1075,7 +1076,7 @@ function getProductPrice(): ReturnType<ProductCardState["getProductPrice"]> {
   const useTax: boolean = resolvedIncludeTax.value;
   const value: number | undefined = useTax ? priceObj?.net : priceObj?.gross;
   if (!value && value !== 0) return "";
-  return _formatPrice(Number(value), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(value), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getProductUrl(): ReturnType<ProductCardState["getProductUrl"]> {
   return props.configuration?.urls?.getProductUrl(props.product, props.language) ?? "#";

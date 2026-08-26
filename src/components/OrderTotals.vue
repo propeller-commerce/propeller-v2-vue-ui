@@ -67,6 +67,7 @@ import { computed } from "vue";
 
 import { Order, OrderDiscountType } from '@propeller-commerce/propeller-sdk-v2';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 
@@ -223,6 +224,6 @@ function formatItemPrice(price: number): ReturnType<OrderTotalsState['formatItem
   if (props.formatPrice) {
     return props.formatPrice(price);
   }
-  return _formatPrice(price || 0, { symbol: infra.currency ?? '€' });
+  return _formatPrice(price || 0, { symbol: infra.currency ?? '€', locale: localeForLanguage(infra.language) });
 }
 </script>

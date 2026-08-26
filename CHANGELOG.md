@@ -8,6 +8,60 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.18.0] - 2026-08-26
+
+The Vue half of the storefront-integration batch shipped in react-ui 0.19.0, so
+the two surfaces stay in step.
+
+### Added
+
+- **`useCart().addItems(items)`** — sequential bulk add that threads each add's
+  resolved cart id into the next. "Add this whole set to the basket" is a normal
+  requirement (kits, re-order, recipe packs) and there was no bulk call, so every
+  consumer wrote the loop themselves.
+- **Bonus items in the add-to-cart modal.** A promotion granting a free product
+  said nothing at the moment it fired; the shopper only found it by opening the
+  cart later, which is after it can influence them. Only the items *this* add
+  earned are shown. `bonusItemsLabels` overrides the block's labels.
+- **`className` on `CartSummaryProps`**, and `currency` on `GridFiltersProps` /
+  `GridToolbarProps`, resolved from `<PropellerProvider>` when omitted.
+- **`language` on `ProductBulkPricesProps` / `ProductPriceProps`**, which decides
+  the number format prices render in.
+
+### Fixed
+
+- **Prices used Dutch separators in every language.** Every caller passed only a
+  symbol and left `formatPrice`'s locale at its `nl-NL` default, so an English
+  shop rendered `£ 3,45`. Number format now follows the storefront language via
+  core-ui's `localeForLanguage`, giving `£3.45`. Dutch output is unchanged.
+- **The price-range inputs and the active price-filter chip hardcoded `€`.** The
+  chip had neither a prop nor a class, so no userland fix existed.
+- **`ProductBulkPrices` ignored an explicit empty `title`.** The heading is
+  resolved with `getLabel`, which treats `''` as missing and substitutes its
+  English default — so the component's own "no title, no heading" branch was
+  dead code and the block rendered "Volume pricing" on a Dutch page.
+- **The mini-cart labelled an excl-VAT figure "Total".** The cart page calls the
+  same number "Total excl. VAT" and reserves "Total" for the incl-VAT figure, so
+  the first number a shopper saw understated the price by one VAT amount. The
+  label now follows the same switch the figure does (new key: `totalExclVat`).
+- **`CartSummary` painted a card background with no card** — no padding, radius
+  or shadow, directly above a properly styled `ActionCode` in the same column.
+- **`SearchBar`'s input was styled for a dark header** (`bg-white/95
+  border-white/20`), rendering as a white-on-white ghost on a light one. It now
+  uses the themed surface and border tokens.
+- **Order-item links dropped the locale prefix.** `OrderItemCard` built
+  `/product/:id/:slug` from literals instead of the host's URL builders, so on a
+  prefixed storefront the link sent the visitor to the default language. It now
+  uses `configuration.urls` when supplied, with the literals as a fallback.
+  (`SearchBar` already did this correctly.)
+- **`OrderList` showed a bare line of text while loading**, collapsing the list
+  and snapping it back — most visible when switching language on the account
+  pages. It renders skeleton rows that hold the layout instead.
+
+### Changed
+
+- Requires `@propeller-commerce/propeller-v2-core-ui` `^0.7.0`.
+
 ## [0.17.0] - 2026-08-21
 
 ### Added

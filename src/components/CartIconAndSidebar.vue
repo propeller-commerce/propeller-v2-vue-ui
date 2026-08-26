@@ -54,7 +54,7 @@
           <div class="flex justify-between gap-4">
             <span
               class="propeller-cart-icon__popover-label text-muted-foreground"
-              >{{ getLabel("totalLabel", "Total") }}</span
+              >{{ getTotalLabel("totalLabel") }}</span
             ><span
               class="propeller-cart-icon__popover-total font-semibold text-foreground"
               >{{ getTotalPrice() }}</span
@@ -277,7 +277,7 @@
               >
                 <span
                   class="propeller-cart-icon__total-label text-sm font-medium text-muted-foreground"
-                  >{{ getLabel("total", "Total") }}</span
+                  >{{ getTotalLabel("total") }}</span
                 ><span
                   class="propeller-cart-icon__total-value text-base font-bold text-foreground"
                   >{{ getTotalPrice() }}</span
@@ -364,6 +364,7 @@ import { Cart, CartMainItem, Contact, Customer, GraphQLClient, PurchaseRole } fr
 import { useCart } from "../composables/vue/useCart";
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import DefaultCartBonusItemsImpl from "./CartBonusItems.vue";
 import DefaultCartItem from "./CartItem.vue";
@@ -438,7 +439,7 @@ export interface CartIconAndSidebarProps {
 
   /**
    * Labels for the component.
-   * Available keys: cartIconLabel, totalLabel, itemsLabel, emptyCart,
+   * Available keys: cartIconLabel, totalLabel, totalExclVat, itemsLabel, emptyCart,
    * continueShopping, qty, total, checkoutButton, cartPageButton, closeLabel
    */
   labels?: Record<string, string>;
@@ -574,11 +575,20 @@ function getTotalItems(): ReturnType<CartIconAndSidebarState["getTotalItems"]> {
 // (incl.) — they never reconciled, and neither responded to the toggle. SDK
 // mapping: net = incl. VAT, gross = excl. VAT. Resolved from <PropellerProvider>.
 const useTax = computed(() => !!infra.includeTax);
+// The figure follows the toggle, so the label has to as well. In excl. mode
+// this is the cart page's "Total excl. VAT", not its "Total" — an unqualified
+// "Total" here named a number one VAT amount below what the shopper is charged,
+// and the mini-cart is the figure they see first.
+function getTotalLabel(key: string): string {
+  return useTax.value
+    ? _getLabel(props.labels, key, "Total")
+    : _getLabel(props.labels, "totalExclVat", "Total excl. VAT");
+}
 function getTotalPrice(): ReturnType<CartIconAndSidebarState["getTotalPrice"]> {
   const total = useTax.value
     ? props.cart?.total?.totalNet
     : props.cart?.total?.totalGross;
-  return _formatPrice(total ?? 0, { symbol: (infra.currency as string | undefined) ?? "€" });
+  return _formatPrice(total ?? 0, { symbol: (infra.currency as string | undefined) ?? "€", locale: localeForLanguage(props.language) });
 }
 function getItems(): ReturnType<CartIconAndSidebarState["getItems"]> {
   return getCartItems().filter((item: CartMainItem) => item && item.product);

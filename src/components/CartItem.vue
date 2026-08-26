@@ -537,6 +537,7 @@ import { onMounted, ref, watch, computed, type Component } from "vue";
 import { BundleItem, Cart, CartBaseItem, CartMainItem, Cluster, Contact, Crossupsell, type CrossupsellSearchInput, type CrossupsellsQueryVariables, CrossupsellType, Customer, GraphQLClient, type MediaImageProductSearchInput, Product, ProductInventory, type TransformationsInput, YesNo } from "@propeller-commerce/propeller-sdk-v2";
 import { useCart } from "../composables/vue/useCart";
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getProductImageUrl as _getProductImageUrl,
   getProductSku as _getProductSku,
@@ -831,14 +832,12 @@ function getInventory(): ReturnType<CartItemState["getInventory"]> {
 function getFormattedPrice(): ReturnType<CartItemState["getFormattedPrice"]> {
   const item = props.cartItem;
   const price = props.includeTax ? item?.totalSumNet || 0 : item?.totalSum || 0;
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getChildItemPrice(
   child: CartBaseItem,
 ): ReturnType<CartItemState["getChildItemPrice"]> {
-  return _formatPrice(Number(child.totalSum ?? 0), {
-    symbol: props.currency ?? "€",
-  });
+  return _formatPrice(Number(child.totalSum ?? 0), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function isBundleItem(): ReturnType<CartItemState["isBundleItem"]> {
   return !!props.cartItem.bundle;
@@ -849,7 +848,7 @@ function getBundleName(): ReturnType<CartItemState["getBundleName"]> {
 function getBundlePrice(): ReturnType<CartItemState["getBundlePrice"]> {
   const price = props.cartItem.bundle?.price?.net;
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getBundleLeaderName(): ReturnType<
   CartItemState["getBundleLeaderName"]
@@ -869,7 +868,7 @@ function getBundleLeaderPrice(): ReturnType<
   if (!leader) return "";
   const price = leader.price?.net;
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getBundleNonLeaders(): ReturnType<
   CartItemState["getBundleNonLeaders"]
@@ -888,7 +887,7 @@ function getBundleItemPrice(
 ): ReturnType<CartItemState["getBundleItemPrice"]> {
   const price = bundleItem.price?.net;
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 async function handleQuantityChange(
   newQuantity: number,
@@ -997,7 +996,7 @@ function getCrossupsellPrice(
   if (!price) return "";
   const value = props.includeTax ? price.net : price.gross;
   if (value === undefined || value === null) return "";
-  return _formatPrice(Number(value), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(value), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 async function handleAddCrossupsellToCart(
   item: Crossupsell,

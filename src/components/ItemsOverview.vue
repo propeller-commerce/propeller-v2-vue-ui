@@ -212,6 +212,7 @@ import { computed } from "vue";
 
 import { BundleItem, Cart, CartBaseItem, CartMainItem, YesNo } from "@propeller-commerce/propeller-sdk-v2";
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice, formatSurcharge as _formatSurcharge } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 
@@ -347,7 +348,7 @@ function formatItemPrice(
   if (props.formatPrice) {
     return props.formatPrice(price);
   }
-  return _formatPrice(price || 0, { symbol: infra.currency ?? "€" });
+  return _formatPrice(price || 0, { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getItemName(item: any): ReturnType<ItemsOverviewState["getItemName"]> {
   return getLanguageString(item.product?.names, infra.language || "NL", "Product");
@@ -437,7 +438,7 @@ function getBundlePrice(
 ): ReturnType<ItemsOverviewState["getBundlePrice"]> {
   const price = bundlePriceOf(item.bundle?.price);
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: infra.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getBundleLeaderName(
   item: any,
@@ -457,7 +458,7 @@ function getBundleLeaderPrice(
   if (!leader) return "";
   const price = bundlePriceOf(leader.price);
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: infra.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getBundleNonLeaders(
   item: any,
@@ -476,6 +477,6 @@ function getBundleItemPrice(
 ): ReturnType<ItemsOverviewState["getBundleItemPrice"]> {
   const price = bundlePriceOf(bundleItem.price);
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: infra.currency ?? "€" });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 </script>

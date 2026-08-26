@@ -14,6 +14,7 @@
 import { ref, computed } from 'vue';
 import type { Cart, Contact, Customer, GraphQLClient, MediaImageProductSearchInput, TransformationsInput } from '@propeller-commerce/propeller-sdk-v2';
 import { formatPrice as _formatPrice, getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import { useQuickOrder, type QuickOrderMatch } from '../composables/vue/useQuickOrder';
 
@@ -153,7 +154,7 @@ function getLabel(key: string, fallback: string): string {
 // Price formatter — a consumer-supplied `formatPrice` wins (it owns its own
 // symbol); otherwise the shared helper renders the symbol via `symbol: currency`.
 function displayPrice(n: number): string {
-  return props.formatPrice ? props.formatPrice(n) : _formatPrice(n, { symbol: currency.value });
+  return props.formatPrice ? props.formatPrice(n) : _formatPrice(n, { symbol: currency.value, locale: localeForLanguage(props.language) });
 }
 
 const { submitting, searchProducts, submit } = useQuickOrder({

@@ -4,11 +4,11 @@
       :class="`propeller-product-bulk-prices ${className || ''}`"
       :data-include-tax="getIncludeTax() ? 'true' : 'false'"
     >
-      <template v-if="getLabel('title', 'Volume pricing')">
+      <template v-if="title">
         <h3
           class="propeller-product-bulk-prices__title text-base font-semibold text-foreground mb-3"
         >
-          {{ getLabel("title", "Volume pricing") }}
+          {{ title }}
         </h3>
       </template>
 
@@ -72,12 +72,21 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { ProductPrice, Contact, Customer } from "@propeller-commerce/propeller-sdk-v2";
 import type { IDiscount } from "@propeller-commerce/propeller-sdk-v2";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 
 export interface ProductBulkPricesProps {
+  /**
+   * Storefront language ('EN', 'NL', …). Decides the number format prices are
+   * rendered in — without it they fall back to Dutch separators regardless of
+   * the language the shopper is reading.
+   */
+  language?: string;
+
   /**
    * Bulk price tiers from the product.
    * Obtain from `product.bulkPrices`.
@@ -227,7 +236,7 @@ function getPrice(
   const useTax: boolean = getIncludeTax();
   const value: number | undefined = useTax ? tier.net : tier.gross;
   if (value === null || value === undefined) return "";
-  return _formatPrice(Number(value), { symbol: props.currency ?? "€" });
+  return _formatPrice(Number(value), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getQuantityLabel(
   tier: ProductPrice,
@@ -258,4 +267,10 @@ function getLabel(
 ): ReturnType<ProductBulkPricesState["getLabel"]> {
   return _getLabel(props.labels, key, fallback);
 }
+
+// An explicit empty `title` label means "render no heading" — the template
+// above relies on it. getLabel() treats '' as missing and returns its English
+// fallback, so the heading came back as "Volume pricing" in every locale; read
+// the label directly here and only fall back when the key is absent.
+const title = computed(() => props.labels?.title ?? 'Volume pricing');
 </script>

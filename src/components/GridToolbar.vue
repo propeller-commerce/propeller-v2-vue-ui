@@ -105,7 +105,7 @@
                 if (onPriceFilterRemove) onPriceFilterRemove();
               }
             "
-            >{{ getLabel('price') }}: € {{ priceFilterMin ?? 0 }} – €{{ priceFilterMax ?? '∞'
+            >{{ getLabel('price') }}: {{ currencySymbol }} {{ priceFilterMin ?? 0 }} – {{ currencySymbol }}{{ priceFilterMax ?? '∞'
             }}<span class="propeller-grid-toolbar__filter-badge-remove">×</span></span
           >
         </template>
@@ -143,10 +143,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 import { Contact, Customer, ProductSortField, SortOrder } from '@propeller-commerce/propeller-sdk-v2';
 import { type Availability, MIN_STOCK_THRESHOLD } from '@propeller-commerce/propeller-v2-core-ui';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 // Default sort field keys shown in the dropdown when sortOptions is not provided.
 const ALL_SORT_FIELDS: string[] = [
   ProductSortField.CATEGORY_ORDER,
@@ -374,6 +375,11 @@ interface GridToolbarState {
 }
 
 const props = defineProps<GridToolbarProps>();
+
+// The active price-filter chip rendered its euro inline as text — no prop and
+// no class, so a non-euro shop had no way to reach it at all.
+const infra = useInfraProps(props);
+const currencySymbol = computed(() => (infra.currency as string | undefined) ?? '€');
 const currentSortField = ref<GridToolbarState['currentSortField']>(
   ProductSortField.CATEGORY_ORDER
 );

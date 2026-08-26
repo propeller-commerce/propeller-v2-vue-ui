@@ -298,6 +298,7 @@ import {
 import AddToCart from "./AddToCart.vue";
 import ItemStock from "./ItemStock.vue";
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getProductImageUrl as _getProductImageUrl,
   getClusterImageUrl as _getClusterImageUrl,
@@ -485,7 +486,7 @@ function getItemPrice(): ReturnType<FavoriteListItemState["getItemPrice"]> {
   if (!priceObj) return "";
   const value: number | undefined = useTax ? priceObj?.net : priceObj?.gross;
   if (!value && value !== 0) return "";
-  return _formatPrice(Number(value), { symbol: infra.currency ?? "€" });
+  return _formatPrice(Number(value), { symbol: infra.currency ?? "€", locale: localeForLanguage(props.language) });
 }
 function getLabel(
   key: string,
