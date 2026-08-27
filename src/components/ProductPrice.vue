@@ -45,6 +45,7 @@ import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui'
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { isContentHidden as _isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface ProductPriceProps {
   /**
@@ -121,13 +122,20 @@ interface ProductPriceState {
 
 const props = defineProps<ProductPriceProps>();
 
+
+// Resolve infra ONCE at setup — `inject()` (inside useInfraProps) only works
+// during setup. Reading `props.language` / `props.currency` directly meant
+// every host had to pass them, and the price silently formatted at the
+// `nl-NL` default on a shop reading in any other language.
+const infra = useInfraProps(props);
+
 function isHidden(): ReturnType<ProductPriceState["isHidden"]> {
-  return _isContentHidden(props.portalMode, props.user);
+  return _isContentHidden(infra.portalMode, infra.user);
 }
 function formatPrice(
   value: number | null | undefined,
 ): ReturnType<ProductPriceState["formatPrice"]> {
-  return _formatPrice(value, { symbol: props.currency || "\u20AC", locale: localeForLanguage(props.language) });
+  return _formatPrice(value, { symbol: infra.currency || "\u20AC", locale: localeForLanguage(infra.language) });
 }
 function getOptionsTotal(
   useNet: boolean,
@@ -166,7 +174,7 @@ function getOptionsTotal(
 function getLeadingPrice(): ReturnType<ProductPriceState["getLeadingPrice"]> {
   const price = props.price as ProductPrice;
   if (!price) return "";
-  const useNet = !!props.includeTax;
+  const useNet = !!infra.includeTax;
   const base = useNet ? price.net : price.gross;
   if (base === null || base === undefined) return "";
   return formatPrice(base + getOptionsTotal(useNet));
@@ -176,20 +184,20 @@ function getSecondaryPrice(): ReturnType<
 > {
   const price = props.price as ProductPrice;
   if (!price) return "";
-  const useNet = !props.includeTax; // opposite of leading
+  const useNet = !infra.includeTax; // opposite of leading
   const base = useNet ? price.net : price.gross;
   if (base === null || base === undefined) return "";
   return formatPrice(base + getOptionsTotal(useNet));
 }
 function getTaxLabel(): ReturnType<ProductPriceState["getTaxLabel"]> {
-  return props.includeTax
+  return infra.includeTax
     ? getLabel("inclTax", "incl. VAT")
     : getLabel("exclTax", "excl. VAT");
 }
 function getSecondaryTaxLabel(): ReturnType<
   ProductPriceState["getSecondaryTaxLabel"]
 > {
-  return props.includeTax
+  return infra.includeTax
     ? getLabel("exclTax", "excl. VAT")
     : getLabel("inclTax", "incl. VAT");
 }

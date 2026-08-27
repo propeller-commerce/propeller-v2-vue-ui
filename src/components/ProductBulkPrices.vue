@@ -77,6 +77,7 @@ import { ProductPrice, Contact, Customer } from "@propeller-commerce/propeller-s
 import type { IDiscount } from "@propeller-commerce/propeller-sdk-v2";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 
 export interface ProductBulkPricesProps {
@@ -138,11 +139,18 @@ interface ProductBulkPricesState {
 
 const props = defineProps<ProductBulkPricesProps>();
 
+
+// Resolve infra ONCE at setup — `inject()` (inside useInfraProps) only works
+// during setup. Reading `props.language` / `props.currency` directly meant
+// every host had to pass them, and the price silently formatted at the
+// `nl-NL` default on a shop reading in any other language.
+const infra = useInfraProps(props);
+
 function isHidden(): ReturnType<ProductBulkPricesState["isHidden"]> {
-  return (props.portalMode as string) === "semi-closed" && !props.user;
+  return (infra.portalMode as string) === "semi-closed" && !infra.user;
 }
 function getIncludeTax(): ReturnType<ProductBulkPricesState["getIncludeTax"]> {
-  return props.includeTax !== undefined ? !!props.includeTax : false;
+  return infra.includeTax !== undefined ? !!infra.includeTax : false;
 }
 function getTierQuantity(
   tier: ProductPrice,
@@ -236,7 +244,7 @@ function getPrice(
   const useTax: boolean = getIncludeTax();
   const value: number | undefined = useTax ? tier.net : tier.gross;
   if (value === null || value === undefined) return "";
-  return _formatPrice(Number(value), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(value), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 function getQuantityLabel(
   tier: ProductPrice,

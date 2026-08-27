@@ -219,7 +219,7 @@
               class="propeller-cart-item__option flex flex-wrap gap-x-2 text-sm text-muted-foreground"
             >
               <span class="font-medium">{{
-                getLanguageString(child.product.names, language || 'NL', 'Option')
+                getLanguageString(child.product.names, infra.language || 'NL', 'Option')
               }}</span
               ><span class="text-foreground-subtle hidden sm:inline">-</span
               ><span class="text-foreground-subtle text-xs self-center">{{
@@ -376,7 +376,7 @@
         :formattedPrice="getFormattedPrice()"
         :bundlePrice="getBundlePrice()"
         :includeTax="includeTax"
-        :currency="currency"
+        :currency="infra.currency"
         :labels="labels"
       >
         <template v-if="isBundleItem() && !!getBundlePrice()">
@@ -403,7 +403,7 @@
               :is="PriceImpl"
               :price="cartItem?.product?.price"
               :include-tax="includeTax"
-              :currency="currency"
+              :currency="infra.currency"
               :labels="labels"
             />
             <template v-else>{{ getFormattedPrice() }}</template>
@@ -544,6 +544,7 @@ import {
 } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice, formatSurcharge as _formatSurcharge } from '@propeller-commerce/propeller-v2-core-ui';
 import { useResolvedProps, type ResolveSpec } from '../composables/vue/useResolvedProps';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 import DefaultProductPrice from './ProductPrice.vue';
 import DefaultItemStock from './ItemStock.vue';
 import DefaultProductSurcharges from './defaults/DefaultProductSurcharges.vue';
@@ -722,6 +723,15 @@ const RESOLVE_SPEC: ResolveSpec<CartItemProps> = {
 
 const resolved = computed(() => useResolvedProps(props, RESOLVE_SPEC));
 
+// Resolve infra ONCE at setup. `inject()` (inside useInfraProps) only works
+// during setup — calling it lazily from inside a `computed` getter yields a
+// null context, so the spec-based `resolved.value.*` above cannot be relied on
+// for keys read after setup. The money below therefore reads `language` and
+// `currency` through this proxy: reading them off `props` meant every host had
+// to pass them, and cart lines silently formatted at the `nl-NL` default on a
+// shop reading in any other language.
+const infra = useInfraProps(props);
+
 const PriceImpl = computed(() => resolved.value.priceComponent ?? DefaultProductPrice);
 const StockImpl = computed(() => resolved.value.stockComponent ?? DefaultItemStock);
 const SurchargesImpl = computed(() => resolved.value.surchargesComponent ?? DefaultProductSurcharges);
@@ -783,13 +793,13 @@ function getLabel(
   return _getLabel(props.labels, key, fallback);
 }
 function getProductName(): ReturnType<CartItemState["getProductName"]> {
-  return getLanguageString(props.cartItem.product?.names, props.language || 'NL', 'Product');
+  return getLanguageString(props.cartItem.product?.names, infra.language || 'NL', 'Product');
 }
 function getProductUrl(): ReturnType<CartItemState["getProductUrl"]> {
   if (props.configuration?.urls && props.cartItem.product) {
     return props.configuration.urls.getProductUrl(
       props.cartItem.product as Product,
-      props.language,
+      infra.language,
     );
   }
   return "#";
@@ -819,8 +829,8 @@ function getSurcharges(): string[] {
     .map((s: SurchargeLike) =>
       _formatSurcharge(s, {
         quantity: s.quantity ?? props.cartItem.quantity ?? 1,
-        language: props.language,
-        currency: props.currency ?? "€",
+        language: infra.language,
+        currency: infra.currency ?? "€",
       }),
     )
     .filter((line: string) => line.length > 0);
@@ -832,12 +842,12 @@ function getInventory(): ReturnType<CartItemState["getInventory"]> {
 function getFormattedPrice(): ReturnType<CartItemState["getFormattedPrice"]> {
   const item = props.cartItem;
   const price = props.includeTax ? item?.totalSumNet || 0 : item?.totalSum || 0;
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 function getChildItemPrice(
   child: CartBaseItem,
 ): ReturnType<CartItemState["getChildItemPrice"]> {
-  return _formatPrice(Number(child.totalSum ?? 0), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(child.totalSum ?? 0), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 function isBundleItem(): ReturnType<CartItemState["isBundleItem"]> {
   return !!props.cartItem.bundle;
@@ -848,7 +858,7 @@ function getBundleName(): ReturnType<CartItemState["getBundleName"]> {
 function getBundlePrice(): ReturnType<CartItemState["getBundlePrice"]> {
   const price = props.cartItem.bundle?.price?.net;
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 function getBundleLeaderName(): ReturnType<
   CartItemState["getBundleLeaderName"]
@@ -857,7 +867,7 @@ function getBundleLeaderName(): ReturnType<
   if (!items) return "";
   const leader = items.find((bi: BundleItem) => bi.isLeader === YesNo.Y);
   if (!leader) return "";
-  return getLanguageString(leader.product.names, props.language || 'NL', 'Product');
+  return getLanguageString(leader.product.names, infra.language || 'NL', 'Product');
 }
 function getBundleLeaderPrice(): ReturnType<
   CartItemState["getBundleLeaderPrice"]
@@ -868,7 +878,7 @@ function getBundleLeaderPrice(): ReturnType<
   if (!leader) return "";
   const price = leader.price?.net;
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 function getBundleNonLeaders(): ReturnType<
   CartItemState["getBundleNonLeaders"]
@@ -880,14 +890,14 @@ function getBundleNonLeaders(): ReturnType<
 function getBundleItemName(
   bundleItem: BundleItem,
 ): ReturnType<CartItemState["getBundleItemName"]> {
-  return getLanguageString(bundleItem.product.names, props.language || 'NL', 'Product');
+  return getLanguageString(bundleItem.product.names, infra.language || 'NL', 'Product');
 }
 function getBundleItemPrice(
   bundleItem: BundleItem,
 ): ReturnType<CartItemState["getBundleItemPrice"]> {
   const price = bundleItem.price?.net;
   if (price === undefined || price === null) return "";
-  return _formatPrice(Number(price), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(price), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 async function handleQuantityChange(
   newQuantity: number,
@@ -962,7 +972,7 @@ function getCrossupsellName(
   item: Crossupsell,
 ): ReturnType<CartItemState["getCrossupsellName"]> {
   const product = item?.productTo || item?.clusterTo;
-  return getLanguageString(product?.names, props.language || 'NL', 'Product');
+  return getLanguageString(product?.names, infra.language || 'NL', 'Product');
 }
 function getCrossupsellImageUrl(
   item: Crossupsell,
@@ -977,7 +987,7 @@ function getCrossupsellUrl(
   if (props.configuration?.urls && product) {
     return props.configuration.urls.getProductUrl(
       product as Product,
-      props.language,
+      infra.language,
     );
   }
   return "#";
@@ -996,7 +1006,7 @@ function getCrossupsellPrice(
   if (!price) return "";
   const value = props.includeTax ? price.net : price.gross;
   if (value === undefined || value === null) return "";
-  return _formatPrice(Number(value), { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(Number(value), { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 async function handleAddCrossupsellToCart(
   item: Crossupsell,

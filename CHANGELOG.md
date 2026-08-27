@@ -8,6 +8,28 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.18.2] - 2026-08-27
+
+The Vue half of the fix shipped in react-ui 0.19.2, so the two surfaces stay in
+step.
+
+### Fixed
+
+- **Money formatted at the Dutch default wherever the host didn't pass
+  `language`.** `localeForLanguage(undefined)` is `nl-NL`, so a component that
+  reads `props.language` straight off its props prints Dutch separators unless
+  every host remembers to thread the prop. `ProductCard` resolved it from the
+  provider; several others did not, so one English page could show `€ 1,42` in
+  its PDP hero price and `€1.70` on the cards beneath it.
+  - `ProductPrice` and `ProductBulkPrices` now resolve their infra through
+    `useInfraProps` like the rest of the package, so `language`, `currency`,
+    `includeTax`, `user` and `portalMode` all come from `<PropellerProvider>`
+    unless the host overrides them.
+  - `CartItem` declared `language` and `currency` in its `RESOLVE_SPEC` and
+    then formatted every price off `props.*`, so that resolution was dead code
+    for exactly those keys. Its money and localized names now read the resolved
+    values.
+
 ## [0.18.1] - 2026-08-26
 
 The Vue half of the fix shipped in react-ui 0.19.1, so the two surfaces stay in
