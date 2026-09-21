@@ -371,6 +371,9 @@ export function useCart(options: UseCartOptions): UseCartReturn {
       const service = createServices(graphqlClient).crossupsell;
       const language = languageRef.value || configuration.language || 'NL';
       const u = user.value;
+      // Active company for price scoping: switcher selection first, contact default after.
+      const resolvedCompanyId =
+        companyIdRef.value ?? (u && 'contactId' in u ? (u as Contact).company?.companyId : undefined);
       const variables: CrossupsellsQueryVariables = {
         input: {
           types: (types ?? [CrossupsellType.ACCESSORIES]) as CrossupsellSearchInput['types'],
@@ -384,7 +387,8 @@ export function useCart(options: UseCartOptions): UseCartReturn {
         imageVariantFilters: imageVariantFilters ?? configuration.imageVariantFiltersSmall,
         priceCalculateProductInput: {
           taxZone: taxZone || 'NL',
-          ...(u && 'company' in u && { companyId: (u as Contact)?.company?.companyId }),
+          // Switcher selection wins; the contact's default company is the fallback.
+          ...(resolvedCompanyId !== undefined && { companyId: resolvedCompanyId }),
           ...(u && 'contactId' in u && { contactId: (u as Contact)?.contactId }),
           ...(u && 'customerId' in u && { customerId: (u as Customer)?.customerId }),
         },

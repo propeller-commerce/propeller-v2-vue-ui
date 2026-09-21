@@ -403,6 +403,12 @@ export interface FavoriteListDetailsProps {
   /** The logged in user for which the favorite list is going to be displayed. Resolved from PropellerProvider when omitted. */
   user?: Contact | Customer;
 
+  /**
+   * Active company ID from the company switcher.
+   * Overrides the user's default company for price calculation.
+   * Triggers a re-fetch when changed. */
+  companyId?: number;
+
   /** The favorite list ID to display */
   favoriteListId: string;
 
@@ -791,6 +797,14 @@ watch(
   },
   { immediate: true },
 );
+
+// Prices are scoped to the active company — the loaded list is stale once it changes.
+watch(
+  () => (infra.companyId as number | undefined) ?? props.companyId,
+  () => {
+    fetchList();
+  },
+);
 function getLabel(
   key: string,
   fallback: string,
@@ -847,8 +861,13 @@ function buildFetchVariables(): ReturnType<
       if (contact.contactId) {
         priceInput.contactId = contact.contactId;
       }
-      if (contact.company?.companyId) {
-        priceInput.companyId = contact.company.companyId;
+      // Switcher selection wins; the contact's default company is the fallback.
+      const activeCompanyId =
+        (infra.companyId as number | undefined) ??
+        props.companyId ??
+        contact.company?.companyId;
+      if (activeCompanyId) {
+        priceInput.companyId = activeCompanyId;
       }
     }
   }

@@ -8,6 +8,27 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.19.0] - 2026-09-21
+
+### Fixed
+
+- `FavoriteListDetails` and `useCart.getCrossupsells` priced items for the
+  contact's default company instead of the company selected in the switcher, so
+  a multi-company contact saw the wrong prices while the cart charged the
+  selected company's. Both now resolve the active company as
+  `companyId ?? user.company.companyId`, matching `useProductSlider`.
+- `CartItem` never passed `companyId` into `useCart`, which also left
+  `checkoutAllowed` skipping the PAC authorization-limit check and
+  `fetchActiveCart` unfiltered by company.
+- `FavoriteListDetails` and `CartItem` fetched only on mount, leaving stale
+  prices on screen after a company switch. Both now re-fetch when `companyId`
+  changes.
+
+### Added
+
+- `FavoriteListDetails` accepts a `companyId` prop, resolved from
+  `PropellerProvider` when omitted.
+
 ## [0.18.2] - 2026-08-27
 
 The Vue half of the fix shipped in react-ui 0.19.2, so the two surfaces stay in

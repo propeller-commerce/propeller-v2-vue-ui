@@ -737,6 +737,7 @@ const StockImpl = computed(() => resolved.value.stockComponent ?? DefaultItemSto
 const SurchargesImpl = computed(() => resolved.value.surchargesComponent ?? DefaultProductSurcharges);
 
 const userRef = computed(() => resolved.value.user ?? null);
+const companyIdRef = computed(() => resolved.value.companyId);
 
 const {
   loading,
@@ -750,6 +751,7 @@ const {
 } = useCart({
   graphqlClient: resolved.value.graphqlClient as GraphQLClient,
   user: userRef,
+  companyId: companyIdRef,
   cartId: props.cartId,
   configuration: {
     imageSearchFiltersGrid:
@@ -786,6 +788,11 @@ watch(
   },
   { immediate: true },
 );
+
+// Crossupsells are priced for the active company — refetch when it changes.
+watch(companyIdRef, () => {
+  fetchCrossupsells();
+});
 function getLabel(
   key: string,
   fallback: string,
