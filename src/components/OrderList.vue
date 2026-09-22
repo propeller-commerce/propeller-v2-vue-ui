@@ -10,7 +10,7 @@
         <template v-if="searchFields.includes('term')">
           <div class="propeller-order-list__search-field w-full">
             <label
-              class="propeller-order-list__filter-label block text-sm font-medium text-muted-foreground capitalize mb-1"
+              class="propeller-order-list__filter-label block text-sm font-medium text-muted-foreground mb-1"
               >{{ getColumnLabel("term") }}</label
             ><input
               type="text"
@@ -48,7 +48,7 @@
           >
             <div class="space-y-1">
               <label
-                class="propeller-order-list__filter-label block text-sm font-medium text-muted-foreground capitalize"
+                class="propeller-order-list__filter-label block text-sm font-medium text-muted-foreground"
                 >{{ getColumnLabel(field) }}</label
               >
               <template v-if="field === 'createdAt'">

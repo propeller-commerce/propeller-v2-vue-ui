@@ -81,7 +81,7 @@ export interface ProductDownloadsProps {
    * Obtain from `product.media?.documents` — may be undefined when the
    * product has no documents; the component renders an empty state.
    */
-  downloads?: PaginatedMediaDocumentResponse;
+  downloads?: PaginatedMediaDocumentResponse | null;
 
   /**
    * Language code used to resolve the correct localised document URL and label.

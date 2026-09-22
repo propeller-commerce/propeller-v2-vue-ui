@@ -7,7 +7,7 @@
     >
       <template v-if="!shouldTruncate() || expanded">
         <div
-          class="propeller-category-description__content prose prose-slate max-w-none text-muted-foreground"
+          class="propeller-category-description__content text-muted-foreground"
           v-html="html"
         ></div>
       </template>

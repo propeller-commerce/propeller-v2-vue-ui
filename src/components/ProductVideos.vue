@@ -74,7 +74,7 @@ export interface ProductVideosProps {
    * Obtain from `product.media?.videos` — may be undefined when the
    * product has no videos; the component renders an empty state.
    */
-  videos?: PaginatedMediaVideoResponse;
+  videos?: PaginatedMediaVideoResponse | null;
 
   /**
    * Language code used to resolve the correct localised video URI.

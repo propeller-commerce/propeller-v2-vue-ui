@@ -21,7 +21,7 @@
           >{{ getStockStatusLabel() }}
           <template v-if="getTotalQuantity() > 0">
             <span class="propeller-item-stock__count opacity-70">
-              ({{ getTotalQuantity() }}{{ getLabel('pieces', 'pcs') }})
+              ({{ getTotalQuantity() }} {{ getLabel('pieces', 'pcs') }})
             </span>
           </template>
         </span>

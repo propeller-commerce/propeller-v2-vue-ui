@@ -133,7 +133,7 @@
               :onSortChange="(field: string, order: string) => handleSortChange(field, order as 'ASC' | 'DESC')"
               :onOffsetChange="handleOffsetChange"
               :viewMode="viewMode"
-              :onViewChange="(mode: string) => (viewMode = mode as 'grid' | 'list')"
+              :onViewChange="(mode: 'grid' | 'list') => (viewMode = mode)"
               :onFilterRemove="handleFilterRemove"
               :onPriceFilterRemove="() => handlePriceRangeChange(undefined, undefined)"
               :onClearFilters="clearAllFilters"
@@ -161,7 +161,7 @@
 
           <div class="mt-8">
             <GridPagination
-              :products="{ page: currentPage, pages: totalPages } as any"
+              :products="{ page: currentPage, pages: totalPages }"
               :onPageChange="handlePageChange"
               :labels="paginationLabels"
             />

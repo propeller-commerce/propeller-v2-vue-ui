@@ -36,7 +36,7 @@
                     :data-active="isActiveLink(link.href) ? 'true' : 'false'"
                     :class="`propeller-account-menu__link flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
                       isActiveLink(link.href)
-                        ? 'bg-secondary/5 text-secondary border-l-2 border-secondary'
+                        ? 'bg-primary/5 text-primary border-l-2 border-primary'
                         : 'text-muted-foreground hover:bg-surface-hover hover:text-foreground'
                     }`"
                   >
@@ -68,7 +68,7 @@
         :aria-label="getLabel('accountLabel', 'Account')"
         :data-open="menuOpen ? 'true' : 'false'"
         :class="cn(
-          'propeller-account-menu__trigger inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-control)] text-sm font-medium transition-colors text-white hover:bg-white/10',
+          'propeller-account-menu__trigger inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-control)] text-sm font-medium transition-colors text-foreground hover:bg-surface-hover',
           iconClassName,
         )"
       >

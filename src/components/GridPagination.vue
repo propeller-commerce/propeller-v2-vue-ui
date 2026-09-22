@@ -90,10 +90,11 @@ const DEFAULT_LABELS: Record<string, string> = {
 
 export interface GridPaginationProps {
   /**
-   * A ProductsResponse object for populating the pagination component.
-   * Reads `page` (current page), `pages` (total pages) from the response.
+   * Pagination state: `page` (current page) and `pages` (total pages).
+   * Structural, so a `ProductsResponse` fits as-is and callers holding the two
+   * numbers on their own — `useSpareParts`, `FavoriteListDetails` — need no cast.
    */
-  products: ProductsResponse;
+  products: Pick<ProductsResponse, 'page' | 'pages'> | { page?: number; pages?: number };
 
   /**
    * Called when the user navigates to a different page.
@@ -155,10 +156,10 @@ function getLabel(key: string): ReturnType<GridPaginationState['getLabel']> {
   return labels[key] !== undefined ? labels[key] : DEFAULT_LABELS[key] || key;
 }
 function getTotalPages(): ReturnType<GridPaginationState['getTotalPages']> {
-  return (props.products as ProductsResponse)?.pages || 1;
+  return props.products?.pages || 1;
 }
 function getCurrentPage(): ReturnType<GridPaginationState['getCurrentPage']> {
-  return (props.products as ProductsResponse)?.page || 1;
+  return props.products?.page || 1;
 }
 function showPagination(): ReturnType<GridPaginationState['showPagination']> {
   return getTotalPages() > 1;

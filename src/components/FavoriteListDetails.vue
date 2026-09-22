@@ -99,7 +99,7 @@
             <div class="propeller-favorite-list-details__pagination mt-6">
               <component
                 :is="GridPaginationImpl"
-                :products="getPaginationData() as unknown as ProductsResponse"
+                :products="getPaginationData()"
                 :onPageChange="(page: any) => handlePageChange(page)"
                 :variant="paginationVariant || 'compact'"
               ></component>

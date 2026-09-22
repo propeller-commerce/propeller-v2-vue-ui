@@ -218,7 +218,7 @@ export interface GridToolbarProps {
    * Controls which icon the view-toggle button shows.
    * Defaults to 'grid'.
    */
-  viewMode?: string;
+  viewMode?: 'grid' | 'list';
 
   /**
    * Available page-size options shown in the per-page dropdown.
@@ -248,7 +248,7 @@ export interface GridToolbarProps {
    * Called when the user clicks the view-mode toggle button.
    * Receives the new mode: 'grid' or 'list'.
    */
-  onViewChange?: (mode: string) => void;
+  onViewChange?: (mode: 'grid' | 'list') => void;
 
   /**
    * Total products found — displayed as a result count on the left side.
@@ -360,7 +360,7 @@ interface GridToolbarState {
   currentSortField: string;
   currentSortOrder: string;
   currentOffset: number;
-  currentViewMode: string;
+  currentViewMode: 'grid' | 'list';
   getLabel: (key: string) => string;
   getSortOptions: () => string[];
   getOffsetOptions: () => number[];
@@ -415,7 +415,7 @@ watch(
   () => [props.viewMode],
   () => {
     if (props.viewMode) {
-      currentViewMode.value = props.viewMode as string;
+      currentViewMode.value = props.viewMode;
     }
   },
   { immediate: true }
