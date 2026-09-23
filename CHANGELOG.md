@@ -52,6 +52,18 @@ between minor versions; breaking changes are called out below and in
 - `FavoriteListDetails` accepts a `companyId` prop, resolved from
   `PropellerProvider` when omitted.
 
+- The purchase-authorization rule existed in three divergent copies —
+  `useCart`, `CartSummary` and `CartIconAndSidebar` each re-implemented the PAC
+  lookup with their own field-tolerant reads. All three now call
+  `isOverAuthorizationLimit` from core-ui, which absorbed the underscore-shape
+  handling so it covers both packages.
+
+  This also fixes `useCart.checkoutAllowed` failing open: it returned `true`
+  when the composable's own cart was null, which it is until the consumer calls
+  `addItem`/`resolveCart`. `CartSummary` carried a comment recording that this
+  had put "Continue to Checkout" up in CartView for a user over their limit.
+  (PWP-988)
+
 ### Changed
 
 - `ProductDownloads.downloads` and `ProductVideos.videos` are now nullable as

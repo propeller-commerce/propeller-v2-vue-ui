@@ -360,10 +360,10 @@
 import { cn } from '../composables/shared/utils/cn';
 import { computed, onMounted, ref, type Component } from "vue";
 
-import { Cart, CartMainItem, Contact, Customer, GraphQLClient, PurchaseRole } from "@propeller-commerce/propeller-sdk-v2";
+import { Cart, CartMainItem, Contact, Customer, GraphQLClient } from "@propeller-commerce/propeller-sdk-v2";
 import { useCart } from "../composables/vue/useCart";
 import { useInfraProps } from '../composables/vue/useInfraProps';
-import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { getLabel as _getLabel, getLanguageString, isOverAuthorizationLimit, findPurchaserPac } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import DefaultCartBonusItemsImpl from "./CartBonusItems.vue";
@@ -641,52 +641,23 @@ function showCheckoutButton(): ReturnType<
   CartIconAndSidebarState["showCheckoutButton"]
 > {
   if (props.cartCheckoutButton === false) return false;
-  if (!infra.user || !("contactId" in infra.user)) return true;
-  if (!infra.companyId) return true;
-  const pacData = (infra.user as Contact).purchaseAuthorizationConfigs;
-  const items: any[] =
-    (pacData as any)?.items ?? (pacData as any)?._items ?? [];
-  const purchaserPAC = items.find((pac: any) => {
-    const role = pac.purchaseRole ?? pac._purchaseRole;
-    const pacCompanyId =
-      pac.company?.companyId ??
-      pac.company?._companyId ??
-      pac._company?.companyId ??
-      pac._company?._companyId;
-    return (
-      role === PurchaseRole.PURCHASER && pacCompanyId === infra.companyId
-    );
-  });
-  if (!purchaserPAC) return true;
-  const limit =
-    purchaserPAC.authorizationLimit ?? purchaserPAC._authorizationLimit ?? 0;
-  const totalGross = (props.cart as any)?.total?.totalGross ?? 0;
-  return totalGross <= limit;
+  // No PURCHASER config means no limit applies, so checkout stays open.
+  const pac = findPurchaserPac(infra.user as any, infra.companyId as any);
+  if (!pac) return true;
+  return !isOverAuthorizationLimit(
+    infra.user as any,
+    infra.companyId as any,
+    props.cart as any,
+  );
 }
 function showRequestAuthorizationButton(): ReturnType<
   CartIconAndSidebarState["showRequestAuthorizationButton"]
 > {
-  if (!infra.user || !("contactId" in infra.user)) return false;
-  if (!infra.companyId) return false;
-  const pacData = (infra.user as Contact).purchaseAuthorizationConfigs;
-  const items: any[] =
-    (pacData as any)?.items ?? (pacData as any)?._items ?? [];
-  const purchaserPAC = items.find((pac: any) => {
-    const role = pac.purchaseRole ?? pac._purchaseRole;
-    const pacCompanyId =
-      pac.company?.companyId ??
-      pac.company?._companyId ??
-      pac._company?.companyId ??
-      pac._company?._companyId;
-    return (
-      role === PurchaseRole.PURCHASER && pacCompanyId === infra.companyId
-    );
-  });
-  if (!purchaserPAC) return false;
-  const limit =
-    purchaserPAC.authorizationLimit ?? purchaserPAC._authorizationLimit ?? 0;
-  const totalGross = (props.cart as any)?.total?.totalGross ?? 0;
-  return totalGross > limit;
+  return isOverAuthorizationLimit(
+    infra.user as any,
+    infra.companyId as any,
+    props.cart as any,
+  );
 }
 async function handleRequestAuthorizationClick(): ReturnType<
   CartIconAndSidebarState["handleRequestAuthorizationClick"]

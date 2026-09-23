@@ -100,9 +100,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { Cart, Contact, Customer, GraphQLClient, PurchaseRole } from '@propeller-commerce/propeller-sdk-v2';
+import { Cart, Contact, Customer, GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
 import { useCart } from '../composables/vue/useCart';
-import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { getLabel as _getLabel, isOverAuthorizationLimit } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
@@ -301,27 +301,10 @@ const totalInclVat = computed(() => {
 // "Continue to Checkout" button up even when the user was over their auth limit.
 // Uses the same field-tolerant lookup as CartIconAndSidebar so the cart page
 // and the header sidebar always agree.
-const showRequestAuthorizationButton = computed(() => {
-  const u = infra.user as any;
-  if (!u || !('contactId' in u)) return false;
-  if (!infra.companyId) return false;
-  if (!props.cart) return false;
-  const pacData = u.purchaseAuthorizationConfigs ?? u._purchaseAuthorizationConfigs;
-  const items: any[] = pacData?.items ?? pacData?._items ?? [];
-  const purchaserPac = items.find((pac: any) => {
-    const role = pac.purchaseRole ?? pac._purchaseRole;
-    const pacCompanyId =
-      pac.company?.companyId
-      ?? pac.company?._companyId
-      ?? pac._company?.companyId
-      ?? pac._company?._companyId;
-    return role === PurchaseRole.PURCHASER && pacCompanyId === infra.companyId;
-  });
-  if (!purchaserPac) return false;
-  const limit = (purchaserPac as any).authorizationLimit ?? (purchaserPac as any)._authorizationLimit ?? 0;
-  const totalGross = (props.cart as any)?.total?.totalGross ?? (props.cart as any)?._total?._totalGross ?? 0;
-  return totalGross > limit;
-});
+const showRequestAuthorizationButton = computed(() =>
+  // Against props.cart, not the composable's internal one - see the note above.
+  isOverAuthorizationLimit(infra.user as any, infra.companyId as any, props.cart as any),
+);
 
 function getLabel(key: string, fallback: string): ReturnType<CartSummaryState['getLabel']> {
   return _getLabel(props.labels, key, fallback);

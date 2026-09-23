@@ -5,7 +5,7 @@
  */
 
 import { ref, computed, unref, type Ref, type ComputedRef } from 'vue';
-import { CartStatus, CrossupsellType, PurchaseRole } from '@propeller-commerce/propeller-sdk-v2';
+import { CartStatus, CrossupsellType } from '@propeller-commerce/propeller-sdk-v2';
 import type {
   GraphQLClient,
   Cart,
@@ -30,6 +30,7 @@ import {
   createServices,
   ok,
   err,
+  isCheckoutAllowed,
   type AnyUser,
   type Result,
 } from '@propeller-commerce/propeller-v2-core-ui';
@@ -120,32 +121,13 @@ export function useCart(options: UseCartOptions): UseCartReturn {
   const error = ref<string | null>(null);
   let notesTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-  const checkoutAllowed = computed<boolean>(() => {
-    const u = user.value;
-    if (!u || !('contactId' in u)) return true;
-    if (!companyIdRef.value) return true;
-    if (!cart.value) return true;
-    // Read tolerantly: the SDK can serialize class instances with leading
-    // underscores on private fields. The auth store sanitizes on setUser, but
-    // any data path that bypasses the store (or stale localStorage from a
-    // previous session) can leave the user in the underscored shape. Use the
-    // same defensive pattern as CartIconAndSidebar so cart and sidebar agree.
-    const pacData: any = (u as any).purchaseAuthorizationConfigs ?? (u as any)._purchaseAuthorizationConfigs;
-    const items: any[] = pacData?.items ?? pacData?._items ?? [];
-    const purchaserPac = items.find((pac: any) => {
-      const role = pac.purchaseRole ?? pac._purchaseRole;
-      const pacCompanyId =
-        pac.company?.companyId
-        ?? pac.company?._companyId
-        ?? pac._company?.companyId
-        ?? pac._company?._companyId;
-      return role === PurchaseRole.PURCHASER && pacCompanyId === companyIdRef.value;
-    });
-    if (!purchaserPac) return true;
-    const limit = (purchaserPac as any).authorizationLimit ?? (purchaserPac as any)._authorizationLimit ?? 0;
-    const totalGross = (cart.value as any)?.total?.totalGross ?? (cart.value as any)?._total?._totalGross ?? 0;
-    return totalGross <= limit;
-  });
+  // Reads the composable's own `cart`, which is null until the consumer calls
+  // addItem/resolveCart — so a component that only renders a cart it fetched
+  // itself must pass that cart to `isCheckoutAllowed` rather than read this.
+  // The predicate reads both plain and underscore-prefixed SDK shapes.
+  const checkoutAllowed = computed<boolean>(() =>
+    isCheckoutAllowed(user.value, companyIdRef.value, cart.value)
+  );
 
   function getMinQuantity(product: Product | null | undefined): number {
     const min = product?.minimumQuantity;
