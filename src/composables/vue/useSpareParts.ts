@@ -82,6 +82,15 @@ export interface UseSparePartsOptions {
   sortOrder?: Ref<string | undefined>;
   /** Items per page. Defaults to 12. */
   pageSize?: Ref<number>;
+
+  /**
+   * Controlled page. When provided the composable renders (and fetches) this
+   * page and `goToPage` becomes advisory — the host owns the number, typically
+   * from the URL. Every other listing input was already an option, so its
+   * absence read as "paging is internal" and it was not (PWP-995b). Omit it to
+   * keep the previous uncontrolled behaviour.
+   */
+  page?: Ref<number>;
   /** Image filter config, mirroring `useProductSearch`'s `configuration`. */
   configuration?: {
     /** The channel's anonymous user — logged-out listings are scoped to it. */
@@ -159,7 +168,9 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
   const childMachines = ref<SparePartsMachine[]>([]) as Ref<SparePartsMachine[]>;
   const itemsFound = ref(0);
   const internalLoading = ref(false);
-  const currentPage = ref(1);
+  const internalPage = ref(1);
+  // Controlled when `options.page` is given, mirroring `options.parts`.
+  const currentPage = computed(() => options.page?.value ?? internalPage.value);
   const totalPages = ref(1);
 
   /** Per-instance guard: only the newest fetch commits. Mirrors `useProductSearch`. */
@@ -280,7 +291,7 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
     // `totalPages <= 1` means the count isn't known yet, so don't reject — else
     // the first pagination click is silently dropped. Mirrors the React hook.
     if (page >= 1 && (totalPages.value <= 1 || page <= totalPages.value)) {
-      currentPage.value = page;
+      internalPage.value = page;
     }
   }
 

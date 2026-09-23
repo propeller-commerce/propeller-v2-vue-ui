@@ -27,11 +27,18 @@ import type { GraphQLClient, SparePartsMachine } from '@propeller-commerce/prope
  * concat query hand-writes its own variable block. `imageVariants[0].url` is the
  * exact field `MachineCard`'s image walk reads.
  */
+// name/description/slug deliberately carry NO (language:) field argument.
+// That argument narrows the result to ONE language, which defeats the
+// cross-language fallback getLocalizedValue already implements: an installation
+// with no slug in the tree language came back with an empty slug, MachineGrid
+// could not build an href, and the row was dropped from the list with nothing
+// saying so (PWP-993). The query-level machine(language: $language) below still
+// selects the tree.
 const ROOT_MACHINE_FIELDS = `
   id
-  name(language: $language) { language value }
-  description(language: $language) { language value }
-  slug(language: $language) { language value }
+  name { language value }
+  description { language value }
+  slug { language value }
   media {
     images {
       items { imageVariants(input: $imageVariantFilters) { url } }

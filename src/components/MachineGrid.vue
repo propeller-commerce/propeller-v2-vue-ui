@@ -71,9 +71,8 @@
       >
         <template v-for="child in childMachines" :key="`machine-${child.id}`">
           <MachineCard
-            v-if="childSlugHref(child)"
             :machine="child"
-            :href="childSlugHref(child) as string"
+            :href="childSlugHref(child)"
             :language="machineLanguage"
             :labels="machineCardLabels"
           />
@@ -156,6 +155,12 @@
             :columns="viewMode === 'list' ? 1 : 3"
             :showAvailability="showAvailability ?? false"
             :showStock="showStock ?? true"
+            :productCardComponent="productCardComponent"
+            :productCardLabels="productCardLabels"
+            :addToCartLabels="addToCartLabels"
+            :stockLabels="stockLabels"
+            :priceLabels="priceLabels"
+            :labels="labels"
             :belowNameComponent="QtyBelowName"
           />
 
@@ -285,10 +290,37 @@ export interface MachineGridProps {
   onProductClick?: (product: Product) => void;
 
   // ── Labels ────────────────────────────────────────────────────────────────
+  /**
+   * Custom card for the PARTS list, forwarded to the inner ProductGrid. Without
+   * it the same product looked different depending on the page it was reached
+   * from (PWP-995c).
+   */
+  productCardComponent?: Component;
+
   paginationLabels?: Record<string, string>;
   filtersLabels?: Record<string, string>;
   toolbarLabels?: Record<string, string>;
+  /**
+   * Labels for the machine side of the grid. Keys read here: `loading` and
+   * `noMachines`. The same object is passed to each `MachineCard` as its
+   * `labels`, which reads `viewMachine` — so all three keys belong in it
+   * (PWP-995d).
+   */
   machineCardLabels?: Record<string, string>;
+
+  /**
+   * Labels for the PARTS list, forwarded verbatim to the inner ProductGrid and
+   * the components it embeds.
+   *
+   * MachineGrid used to forward none of these and expose no way to reach them,
+   * so a translated storefront rendered "In stock", "Add" and "Search parts…"
+   * in English in the middle of its own copy (PWP-995a).
+   */
+  productCardLabels?: Record<string, string>;
+  addToCartLabels?: Record<string, string>;
+  stockLabels?: Record<string, string>;
+  priceLabels?: Record<string, string>;
+  labels?: Record<string, string>;
 
   className?: string;
 }
@@ -349,7 +381,7 @@ const { machines: rootMachines, isLoading: rootLoading } = useMachines({
 });
 
 // ── Node: this machine's parts + direct children ───────────────────────────
-const { displayParts, childMachines, isLoading: partsLoading, currentPage, totalPages, goToPage } =
+const { displayParts, childMachines, isLoading: partsLoading, currentPage, totalPages } =
   useSpareParts({
     graphqlClient: infra.graphqlClient as GraphQLClient | undefined,
     // Idle at the root (no slug).
@@ -366,6 +398,10 @@ const { displayParts, childMachines, isLoading: partsLoading, currentPage, total
     sortField: computed(() => props.listing.sortField as string),
     sortOrder: computed(() => props.listing.sortOrder as string),
     pageSize: computed(() => props.listing.offset),
+    // The composable takes the controlled page directly now. It used to own its
+    // own counter, so the only way to drive it from URL state was the watcher
+    // below - undiscoverable unless you read this file (PWP-995b).
+    page: computed(() => props.listing.page),
     configuration: configuration.value,
     onFiltersChange: (f) => (gridFilters.value = f),
     onPriceBoundsChange: (min, max) => {
@@ -379,8 +415,6 @@ const { displayParts, childMachines, isLoading: partsLoading, currentPage, total
 // The parts hook owns its own page counter; feed the controlled URL page into
 // it or pagination writes the page to the URL but never refetches. Mirrors
 // ProductGrid's page sync; also resets to 1 when a filter/sort emit sets page=1.
-watch(() => props.listing.page, (page) => goToPage(page), { immediate: true });
-
 const machineName = computed(() =>
   machine.value ? getLocalizedValue(machine.value.name, machineLanguage.value) : slugToLabel(currentSlug.value)
 );
@@ -404,16 +438,17 @@ const defaultSort = computed(() => [
   { field: props.listing.sortField as string, order: props.listing.sortOrder as string },
 ]);
 
-function childSlugHref(child: SparePartsMachine): string | null {
+// `undefined` when the machine has no slug in ANY language — it genuinely has
+// no URL, so the card renders unlinked rather than vanishing. getLocalizedValue
+// already falls back across languages; the queries feeding it no longer narrow
+// to one (PWP-993).
+function childSlugHref(child: SparePartsMachine): string | undefined {
   const slug = getLocalizedValue(child.slug, machineLanguage.value);
-  if (!slug) return null;
-  return `${currentPath.value}/${slug}`;
+  return slug ? `${currentPath.value}/${slug}` : undefined;
 }
 
 const rootCards = computed(() =>
-  rootMachines.value
-    .map((m) => ({ machine: m, href: childSlugHref(m) }))
-    .filter((c): c is { machine: SparePartsMachine; href: string } => c.href !== null)
+  rootMachines.value.map((m) => ({ machine: m, href: childSlugHref(m) }))
 );
 
 // Per-card qty below the name. React uses a render-prop; Vue's ProductGrid

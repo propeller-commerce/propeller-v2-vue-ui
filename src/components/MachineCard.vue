@@ -2,10 +2,14 @@
   <div
     :class="`propeller-machine-card group relative flex h-full flex-col overflow-hidden rounded-[var(--radius-container)] border border-border bg-card ${className ?? ''}`"
   >
-    <a
+    <!-- A machine with no slug in ANY language has no URL. It used to be dropped
+         from the list entirely, so a customer saw three of four machines with
+         nothing saying why (PWP-993); render a plain card instead. -->
+    <component
+      :is="href ? 'a' : 'div'"
       :href="href"
       class="flex h-full flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      @click="handleClick"
+      @click="href ? handleClick() : undefined"
     >
       <div
         v-if="showImage"
@@ -66,7 +70,7 @@
           {{ viewLabel }}
         </span>
       </div>
-    </a>
+    </component>
   </div>
 </template>
 
@@ -93,14 +97,21 @@ export interface MachineCardProps {
    * URL is its ancestor path (`/machines/a/b/c`), which only the host route
    * knows; the machine object carries just its own slug.
    */
-  href: string;
+  href?: string;
   /** Show the machine image. Defaults to true. */
   showImage?: boolean;
   /** Show the machine description under the name. Defaults to false. */
   showDescription?: boolean;
   /** Language used to resolve the localized name/description. */
   language?: string;
-  /** UI label overrides. Supported key: `viewMachine`. */
+  /**
+   * UI label overrides. Key read here: `viewMachine`.
+   *
+   * `MachineGrid` passes its own `machineCardLabels` straight through to this
+   * prop and additionally reads `loading` and `noMachines` from it, so the
+   * object a grid host supplies carries all three. This doc used to name only
+   * `viewMachine` (PWP-995d).
+   */
   labels?: Record<string, string>;
   /** Extra classes on the card root. */
   className?: string;
