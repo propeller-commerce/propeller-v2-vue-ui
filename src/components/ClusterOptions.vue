@@ -275,7 +275,7 @@ function getOptionsForRender(): ReturnType<
 > {
   const options = (props.options as ClusterOption[]) || [];
   const sel = selectedProductIds.value as Record<string, string>;
-  const hidePrices = isContentHidden(props.portalMode, props.user);
+  const hidePrices = isContentHidden(props.portalMode, props.user, infra.isAuthenticated as boolean | undefined);
   return options
     .filter((option: ClusterOption) => option.hidden !== YesNo.Y)
     .map((option: ClusterOption) => {

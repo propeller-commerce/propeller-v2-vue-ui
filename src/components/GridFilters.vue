@@ -518,7 +518,7 @@ function showPriceFilter(): ReturnType<GridFiltersState["showPriceFilter"]> {
 }
 function showAvailability(): ReturnType<GridFiltersState["showAvailability"]> {
   if (!props.showAvailabilityFilter) return false;
-  return !isContentHidden(props.portalMode, props.user);
+  return !isContentHidden(props.portalMode, props.user, infra.isAuthenticated as boolean | undefined);
 }
 function getFilterName(
   filter: AttributeFilter,

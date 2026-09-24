@@ -68,7 +68,7 @@
         :aria-label="getLabel('accountLabel', 'Account')"
         :data-open="menuOpen ? 'true' : 'false'"
         :class="cn(
-          'propeller-account-menu__trigger inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-control)] text-sm font-medium transition-colors text-foreground hover:bg-surface-hover',
+          'propeller-account-menu__trigger inline-flex items-center gap-2 px-3 py-2 rounded-[var(--radius-control)] text-sm font-medium transition-colors text-inherit',
           iconClassName,
         )"
       >

@@ -15,6 +15,14 @@ import { PropellerScopeKey, type PropellerScope } from '../context/PropellerCont
 const props = withDefaults(
   defineProps<{
     user?: Contact | Customer | null;
+    /**
+     * Whether a session exists, independent of whether `user` has loaded yet.
+     * Deliberately absent from `withDefaults`: Vue coerces an unpassed boolean
+     * to `false`, and defaulting it would be indistinguishable from a host
+     * saying "definitely anonymous". Left undefined so `isContentHidden` keeps
+     * its previous behaviour for hosts that do not supply it.
+     */
+    isAuthenticated?: boolean;
     companyId?: number;
     language?: string;
     includeTax?: boolean;
@@ -35,6 +43,9 @@ const props = withDefaults(
 const scope = reactive({
   get user() {
     return props.user ?? null;
+  },
+  get isAuthenticated() {
+    return props.isAuthenticated;
   },
   get companyId() {
     return props.companyId;

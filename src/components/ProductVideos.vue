@@ -64,7 +64,6 @@ import { getLanguageString, getLanguageUri } from '@propeller-commerce/propeller
 import {
   PaginatedMediaVideoResponse,
   MediaVideo,
-  LocalizedVideo,
   LocalizedString,
 } from '@propeller-commerce/propeller-sdk-v2';
 
@@ -112,10 +111,8 @@ function getVideoItems(): ReturnType<ProductVideosState['getVideoItems']> {
   return v?.items || [];
 }
 function getVideoUri(video: MediaVideo): ReturnType<ProductVideosState['getVideoUri']> {
-  const lang = (props.language as string) || 'NL';
-  const vids = video.videos || [];
-  const match = vids.find((v: LocalizedVideo) => v.language === lang);
-  return match?.uri || vids?.[0]?.uri || '';
+  // Case-insensitive, like getVideoTitle below.
+  return getLanguageUri(video.videos, props.language || 'NL', '');
 }
 function getVideoTitle(video: MediaVideo): ReturnType<ProductVideosState['getVideoTitle']> {
   return getLanguageString(video.alt, props.language || 'NL', 'Video');

@@ -149,7 +149,7 @@
           v-else-if="showAddToCart !== false && resolvedProduct"
           name="addToCart"
           :product="resolvedProduct"
-          :cartId="undefined"
+          :cartId="cartId"
           :labels="labels"
         >
           <component
@@ -158,6 +158,9 @@
             :graphql-client="graphqlClient"
             :user="user"
             :company-id="companyId"
+            :cart-id="cartId"
+            :create-cart="createCart"
+            :on-cart-created="onCartCreated"
             :configuration="configuration"
             :include-tax="includeTax"
             :currency="currency"
@@ -229,6 +232,7 @@ import { computed, onMounted, watch, type Component } from "vue";
 
 import {
   GraphQLClient,
+  Cart,
   Product,
   LocalizedString,
   Contact,
@@ -374,6 +378,12 @@ export interface ProductInfoProps {
    * withheld from anonymous visitors, who get a log-in action instead.
    */
   portalMode?: string;
+  /**
+   * Whether a session exists, independent of whether `user` has loaded yet.
+   * Passed down alongside `portalMode`; closes the hydration window in which
+   * an authenticated visitor still has a null `user`.
+   */
+  isAuthenticated?: boolean;
 
   /**
    * Invoked when an anonymous visitor clicks the log-in action that replaces
@@ -386,6 +396,22 @@ export interface ProductInfoProps {
 
   imageComponent?: Component;
   badgesComponent?: Component;
+  // Without these the PDP's add-to-cart had no cart to add to: with no cartId
+  // and createCart defaulting to false, every add failed outright for a
+  // visitor who did not already have a cart.
+
+  /** Cart to add into. Omit and pass `createCart` to start one on first add. */
+  cartId?: string;
+
+  /** If true a new cart is created when no `cartId` is available. */
+  createCart?: boolean;
+
+  /**
+   * Called when a new cart is created, so the host can persist `cart.cartId`.
+   * WARNING: without it a new cart is created on every add.
+   */
+  onCartCreated?: (cart: Cart) => void;
+
   favoriteComponent?: Component;
   priceComponent?: Component;
   stockComponent?: Component;
@@ -505,7 +531,7 @@ const useNewShell = computed(() =>
 );
 
 const contentHidden = computed<boolean>(() =>
-  isContentHidden(props.portalMode, props.user),
+  isContentHidden(props.portalMode, props.user, props.isAuthenticated),
 );
 
 const ImageImpl = computed(() => props.imageComponent ?? DefaultProductImage);

@@ -4,7 +4,7 @@
  * Covers: AddToCart, CartItem, CartSummary, ActionCode, CartIconAndSidebar.
  */
 
-import { ref, computed, unref, type Ref, type ComputedRef } from 'vue';
+import { ref, computed, unref, watch, type Ref, type ComputedRef } from 'vue';
 import { CartStatus, CrossupsellType } from '@propeller-commerce/propeller-sdk-v2';
 import type {
   GraphQLClient,
@@ -121,13 +121,49 @@ export function useCart(options: UseCartOptions): UseCartReturn {
   const error = ref<string | null>(null);
   let notesTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-  // Reads the composable's own `cart`, which is null until the consumer calls
-  // addItem/resolveCart — so a component that only renders a cart it fetched
-  // itself must pass that cart to `isCheckoutAllowed` rather than read this.
-  // The predicate reads both plain and underscore-prefixed SDK shapes.
-  const checkoutAllowed = computed<boolean>(() =>
-    isCheckoutAllowed(user.value, companyIdRef.value, cart.value)
+  // Active company for the PAC lookup: the switcher selection, else the
+  // contact's own company. Matching on the raw option found no config for a
+  // contact acting for their own company, so every cart read as within limit.
+  const resolvedCompanyIdRef = computed<number | undefined>(() => {
+    const u = user.value;
+    return (
+      companyIdRef.value ??
+      (u && 'contactId' in u ? (u as Contact).company?.companyId : undefined)
+    );
+  });
+
+  // Hydrate a cart the composable was only given the id of. `checkoutAllowed`
+  // has to weigh a total against the purchaser's limit, and with no cart it
+  // answered "allowed" — so an app gating its own checkout button on this let
+  // an over-limit purchaser through while the library's own UI showed
+  // "Request authorization".
+  watch(
+    [() => cartId.value, () => cart.value],
+    async ([id, current]: [string, Cart | null]) => {
+      if (!graphqlClient || !id || current) return;
+      try {
+        const fetched = await createServices(graphqlClient).cart.getCart({
+          cartId: id,
+          imageSearchFilters: configuration.imageSearchFiltersGrid,
+          imageVariantFilters: configuration.imageVariantFiltersSmall,
+          language: languageRef.value || configuration.language || 'NL',
+        });
+        if (fetched) cart.value = fetched as Cart;
+      } catch {
+        // Leave `cart` null — `checkoutAllowed` then reports `false`, which
+        // holds checkout rather than opening it on a failed read.
+      }
+    },
+    { immediate: true }
   );
+
+  // Fails CLOSED while a seeded cart is still loading: with nothing to weigh,
+  // the honest answer is "not yet". The predicate reads both plain and
+  // underscore-prefixed SDK shapes.
+  const checkoutAllowed = computed<boolean>(() => {
+    if (cartId.value && !cart.value) return false;
+    return isCheckoutAllowed(user.value, resolvedCompanyIdRef.value, cart.value);
+  });
 
   function getMinQuantity(product: Product | null | undefined): number {
     const min = product?.minimumQuantity;
@@ -353,9 +389,7 @@ export function useCart(options: UseCartOptions): UseCartReturn {
       const service = createServices(graphqlClient).crossupsell;
       const language = languageRef.value || configuration.language || 'NL';
       const u = user.value;
-      // Active company for price scoping: switcher selection first, contact default after.
-      const resolvedCompanyId =
-        companyIdRef.value ?? (u && 'contactId' in u ? (u as Contact).company?.companyId : undefined);
+      const resolvedCompanyId = resolvedCompanyIdRef.value;
       const variables: CrossupsellsQueryVariables = {
         input: {
           types: (types ?? [CrossupsellType.ACCESSORIES]) as CrossupsellSearchInput['types'],

@@ -67,11 +67,11 @@ import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui'
 import {
   getLanguageString,
   getLanguageUri,
+  resolveLanguageEntry,
 } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   PaginatedMediaDocumentResponse,
   MediaDocument,
-  LocalizedDocument,
   LocalizedString,
 } from "@propeller-commerce/propeller-sdk-v2";
 
@@ -122,10 +122,10 @@ function getDownloadItems(): ReturnType<
 function getDocumentUrl(
   doc: MediaDocument,
 ): ReturnType<ProductDownloadsState["getDocumentUrl"]> {
-  const lang = (props.language as string) || "NL";
-  const docs = doc.documents || [];
-  const match = docs.find((d: LocalizedDocument) => d.language === lang);
-  return match?.originalUrl || docs?.[0]?.originalUrl || "";
+  // Case-insensitive: the API lowercases documents[].language while leaving
+  // alt[].language as uploaded, so matching exactly gave the right label with
+  // the wrong file.
+  return resolveLanguageEntry(doc.documents, props.language || "NL")?.originalUrl || "";
 }
 function getDocumentName(
   doc: MediaDocument,
@@ -135,10 +135,7 @@ function getDocumentName(
 function getDocumentMime(
   doc: MediaDocument,
 ): ReturnType<ProductDownloadsState["getDocumentMime"]> {
-  const lang = (props.language as string) || "NL";
-  const docs = doc.documents || [];
-  const match = docs.find((d: LocalizedDocument) => d.language === lang);
-  return match?.mimeType || docs?.[0]?.mimeType || "";
+  return resolveLanguageEntry(doc.documents, props.language || "NL")?.mimeType || "";
 }
 function getLabel(
   key: string,

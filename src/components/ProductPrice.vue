@@ -130,7 +130,7 @@ const props = defineProps<ProductPriceProps>();
 const infra = useInfraProps(props);
 
 function isHidden(): ReturnType<ProductPriceState["isHidden"]> {
-  return _isContentHidden(infra.portalMode, infra.user);
+  return _isContentHidden(infra.portalMode, infra.user, infra.isAuthenticated as boolean | undefined);
 }
 function formatPrice(
   value: number | null | undefined,

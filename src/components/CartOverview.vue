@@ -225,7 +225,22 @@
         </div>
       </template>
 
-      <template v-if="showPurchaseButton">
+      <!-- An over-limit purchaser reaching /checkout directly used to get the
+           full flow and an ungated "Place order" — the backend refused it with
+           CART_INVALID_STATUS_ERROR, so it ended in an error rather than the
+           authorization flow the cart page offers. -->
+      <template v-if="showPurchaseButton && overLimit">
+        <p class="propeller-cart-overview__authorization-required text-sm text-muted-foreground mt-2">
+          {{
+            getLabel(
+              'authorizationRequired',
+              'This order exceeds your authorization limit. Request authorization from the cart to continue.',
+            )
+          }}
+        </p>
+      </template>
+
+      <template v-if="showPurchaseButton && !overLimit">
         <button
           type="button"
           class="propeller-cart-overview__submit flex items-center justify-center gap-2 w-full bg-primary text-primary-foreground text-center py-3 rounded-[var(--radius-container)] hover:bg-primary/80 transition font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-2"
@@ -254,8 +269,9 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import { Cart, CartAddress, GraphQLClient } from "@propeller-commerce/propeller-sdk-v2";
-import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { Cart, CartAddress, Contact, Customer, GraphQLClient } from "@propeller-commerce/propeller-sdk-v2";
+import { getLabel as _getLabel, isOverAuthorizationLimit } from '@propeller-commerce/propeller-v2-core-ui';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 import { getCountryName as _getCountryName } from '@propeller-commerce/propeller-v2-core-ui';
 
 export interface CartOverviewProps {
@@ -302,6 +318,12 @@ export interface CartOverviewProps {
    * built-in COUNTRIES list is used as a fallback.
    */
   countries?: { code: string; name: string }[];
+
+  /** Logged-in user — used for the purchase-authorization check. Resolved from PropellerProvider when omitted. */
+  user?: Contact | Customer | null;
+
+  /** Active company ID — used for the purchase-authorization check. Resolved from PropellerProvider when omitted. */
+  companyId?: number;
 }
 interface CartOverviewState {
   reference: string;
@@ -334,6 +356,18 @@ const props = withDefaults(defineProps<CartOverviewProps>(), {
   showTermsAndConditions: true,
   showPurchaseButton: true,
 });
+const infra = useInfraProps(props);
+
+// Same predicate CartSummary and the cart sidebar use, against props.cart —
+// so the checkout page cannot contradict what the cart already said.
+const overLimit = computed(() =>
+  isOverAuthorizationLimit(
+    (infra.user ?? props.user) as never,
+    (infra.companyId ?? props.companyId) as never,
+    props.cart as never,
+  ),
+);
+
 const reference = ref<CartOverviewState["reference"]>("");
 const notes = ref<CartOverviewState["notes"]>("");
 const termsAccepted = ref<CartOverviewState["termsAccepted"]>(false);

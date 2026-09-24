@@ -788,6 +788,7 @@ function showAddToCart(): ReturnType<ProductGridState["showAddToCart"]> {
     !isContentHidden(
       infra.portalMode as string | undefined,
       (props.user ?? infra.user) as Contact | Customer | null | undefined,
+infra.isAuthenticated as boolean | undefined,
     ) && allow
   );
 }

@@ -16,6 +16,14 @@ import {
  */
 export interface PropellerScope {
   user: Contact | Customer | null;
+  /**
+   * Whether a session exists, independent of whether `user` has loaded yet.
+   * Hosts paint from a cached hint before the profile arrives, so `user` is
+   * null for an authenticated visitor for the first frames; without this,
+   * semi-closed surfaces flash their logged-out state. Optional — omitting it
+   * keeps the previous behaviour.
+   */
+  isAuthenticated?: boolean;
   companyId: number | undefined;
   language: string;
   includeTax: boolean;

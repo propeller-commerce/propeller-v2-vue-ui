@@ -345,6 +345,9 @@
               :after-add-to-cart="props.afterAddToCart"
               :on-proceed-to-checkout="props.onProceedToCheckout"
               :on-request-quote-click="props.onRequestQuoteClick"
+              :create-cart="props.createCart"
+              :on-cart-created="props.onCartCreated"
+              :include-tax="props.includeTax"
               :labels="props.addToCartLabels"
             />
             <AddToCart
@@ -624,6 +627,9 @@
               :after-add-to-cart="props.afterAddToCart"
               :on-proceed-to-checkout="props.onProceedToCheckout"
               :on-request-quote-click="props.onRequestQuoteClick"
+              :create-cart="props.createCart"
+              :on-cart-created="props.onCartCreated"
+              :include-tax="props.includeTax"
               :labels="props.addToCartLabels"
             />
             <AddToCart
@@ -1032,6 +1038,7 @@ const contentHidden = computed<boolean>(() =>
   isContentHidden(
     (props.portalMode ?? infra.portalMode) as string | undefined,
     (props.user ?? infra.user) as Contact | Customer | null | undefined,
+infra.isAuthenticated as boolean | undefined,
   ),
 );
 const showStock = computed<boolean>(() => !!props.showStock && !contentHidden.value);

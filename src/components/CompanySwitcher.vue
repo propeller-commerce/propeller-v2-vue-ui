@@ -8,7 +8,10 @@
       type="button"
       aria-haspopup="listbox"
       :aria-label='getLabel("switchCompanyAriaLabel", "Switch company")'
-      class="propeller-company-switcher__trigger flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-1.5 text-sm font-medium transition-colors hover:bg-white/10"
+      :class="cn(
+        'propeller-company-switcher__trigger flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-1.5 text-sm font-medium transition-colors text-inherit',
+        triggerClassName,
+      )"
       @click="async (event) => toggleDropdown()"
       :aria-expanded="isOpen"
     >
@@ -80,6 +83,7 @@ import { useInfraProps } from '../composables/vue/useInfraProps';
 
 import { Contact, Company } from '@propeller-commerce/propeller-sdk-v2';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { cn } from '../composables/shared/utils/cn';
 
 export interface CompanySwitcherProps {
   /** The contact to whom the companies are assigned. Default company is user.company, all companies are in user.companies. Resolved from `<PropellerProvider>` when omitted. */
@@ -97,6 +101,9 @@ export interface CompanySwitcherProps {
   /** Translated labels keyed by the slugs used inside the component (see
    * `getLabel` calls). Missing keys fall back to the English defaults. */
   labels?: Record<string, string>;
+
+  /** Additional class name for the switcher's trigger button. */
+  triggerClassName?: string;
 }
 interface CompanySwitcherState {
   isOpen: boolean;

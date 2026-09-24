@@ -58,12 +58,20 @@ const props = defineProps<ImageComponentProps>();
 
 function pickImageUrl(mediaItems: MediaItem[], target: string): string | null {
   if (!mediaItems || mediaItems.length === 0) return null;
+  // Case-insensitive: media language casing is not guaranteed to match the
+  // storefront's. Compared inline rather than via core-ui's resolver because
+  // that one falls back to items[0], which would let a wrong-language variant
+  // on the FIRST media item beat a right-language one on a later item and
+  // collapse the pass ordering below.
+  const targetUpper = (target || '').toUpperCase();
+  const langMatches = (value?: string): boolean => (value || '').toUpperCase() === targetUpper;
+
   for (const m of mediaItems) {
-    const match = m.imageVariants?.find((v) => v.language === target && v.url);
+    const match = m.imageVariants?.find((v) => langMatches(v.language) && v.url);
     if (match?.url) return match.url;
   }
   for (const m of mediaItems) {
-    const match = m.images?.find((i) => i.language === target && i.originalUrl);
+    const match = m.images?.find((i) => langMatches(i.language) && i.originalUrl);
     if (match?.originalUrl) return match.originalUrl;
   }
   for (const m of mediaItems) {
