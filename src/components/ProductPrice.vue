@@ -120,7 +120,10 @@ interface ProductPriceState {
   formatPrice: (value: number | null | undefined) => string;
 }
 
-const props = defineProps<ProductPriceProps>();
+// `showLoginPrompt` is documented as defaulting to true, but Vue casts an
+// ABSENT Boolean prop to `false`, so the prompt never rendered unless a host
+// passed it. Same class of bug as the infra booleans — see `useInfraProps`.
+const props = withDefaults(defineProps<ProductPriceProps>(), { showLoginPrompt: true });
 
 
 // Resolve infra ONCE at setup — `inject()` (inside useInfraProps) only works

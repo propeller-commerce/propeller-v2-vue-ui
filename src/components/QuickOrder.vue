@@ -136,7 +136,9 @@ function blankRow(): Row {
 
 // ── Setup ────────────────────────────────────────────────────────────────────
 
-const props = defineProps<QuickOrderProps>();
+// `applyOrderlists` must stay `undefined` when unset: downstream reads `=== false`
+// as "deliberately disabled", and Vue casts an absent Boolean prop to `false`.
+const props = withDefaults(defineProps<QuickOrderProps>(), { applyOrderlists: undefined });
 const infra = useInfraProps(props);
 
 const currency = computed(() => props.currency ?? '€');

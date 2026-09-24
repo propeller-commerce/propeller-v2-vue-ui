@@ -31,6 +31,10 @@ import {
   type FilterAvailableAttributeInput,
 } from '@propeller-commerce/propeller-sdk-v2';
 import { resolveListingUserId } from '../shared/utils/listingUserId';
+import {
+  machineLanguageCandidates,
+  resolveMachineAcrossLanguages,
+} from '../shared/utils/machineLanguage';
 
 /** Statuses the storefront shows. Mirrors `useProductSearch` / `lib/server`. */
 const STOREFRONT_STATUSES: ProductStatus[] = [
@@ -64,6 +68,15 @@ export interface UseSparePartsOptions {
    * (typically EN) while their spare parts are localized.
    */
   machineLanguage?: Ref<string | undefined>;
+  /**
+   * Extra languages to try when the slug does not resolve in `machineLanguage`.
+   *
+   * A slug resolves only in the language it was authored in, so a tree that is
+   * only half-translated has machines reachable by an NL slug but not an EN
+   * one. `machineLanguage` and `language` are always tried first; list the
+   * shop's other locales here to cover the rest. Order is the try order.
+   */
+  machineLanguages?: Ref<string[] | undefined>;
   /** Tax zone for price calculation. */
   taxZone?: string;
   /** Active user — drives `userId` scoping and contact/customer pricing. */
@@ -127,6 +140,14 @@ export interface UseSparePartsReturn {
   fetchParts: () => Promise<void>;
   /** Navigate to a page. */
   goToPage: (page: number) => void;
+  /**
+   * The slug resolved in none of the candidate languages.
+   *
+   * Distinct from "resolved but has no parts": this node does not exist, and a
+   * host that renders the usual empty listing for it shows a page built
+   * entirely from the URL. Always `false` in controlled mode.
+   */
+  notFound: ComputedRef<boolean>;
 }
 
 /** Resolve contact/customer ids from the active user, mirroring the React hook. */
@@ -154,6 +175,7 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
   const slugRef = options.slug ?? ref<string | undefined>(undefined);
   const termRef = options.term ?? ref<string | undefined>(undefined);
   const machineLanguageRef = options.machineLanguage ?? ref<string | undefined>(undefined);
+  const machineLanguagesRef = options.machineLanguages ?? ref<string[] | undefined>(undefined);
   const textFiltersRef = options.textFilters ?? ref<ProductTextFilterInput[] | undefined>(undefined);
   const priceMinRef = options.priceFilterMin ?? ref<number | undefined>(undefined);
   const priceMaxRef = options.priceFilterMax ?? ref<number | undefined>(undefined);
@@ -172,6 +194,7 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
   // Controlled when `options.page` is given, mirroring `options.parts`.
   const currentPage = computed(() => options.page?.value ?? internalPage.value);
   const totalPages = ref(1);
+  const notFound = ref(false);
 
   /** Per-instance guard: only the newest fetch commits. Mirrors `useProductSearch`. */
   let fetchId = 0;
@@ -232,18 +255,45 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
         isSearchable: true,
       };
 
-      const machine = await service.getMachine({
-        slug: slugRef.value,
-        // The machine tree's language, NOT the parts' — see `machineLanguage`.
-        language: machineLanguageRef.value ?? languageRef.value,
-        sparePartsMachineProductSearchInput,
-        filterAvailableAttributeInput,
-        priceCalculateProductInput,
-        imageSearchFilters: options.configuration?.imageSearchFiltersGrid as never,
-        imageVariantFilters: options.configuration?.imageVariantFiltersMedium as never,
-      });
+      // A slug resolves only in the language it was authored in, so try the
+      // tree language first and fall back through the shop's other languages.
+      // Without this a machine listed by its NL slug in an EN tree opened an
+      // empty page — the PWP-993 row was restored but its contents were not.
+      const resolved = await resolveMachineAcrossLanguages(
+        machineLanguageCandidates(
+          machineLanguageRef.value,
+          languageRef.value,
+          machineLanguagesRef.value
+        ),
+        (language) =>
+          service.getMachine({
+            slug: slugRef.value,
+            // The machine tree's language, NOT the parts' — see `machineLanguage`.
+            language,
+            sparePartsMachineProductSearchInput,
+            filterAvailableAttributeInput,
+            priceCalculateProductInput,
+            imageSearchFilters: options.configuration?.imageSearchFiltersGrid as never,
+            imageVariantFilters: options.configuration?.imageVariantFiltersMedium as never,
+          })
+      );
 
       if (thisId !== fetchId) return;
+
+      // Exhausted every language: the slug exists in none of them. Say so —
+      // rendering an empty parts list under a title derived from the slug is
+      // what made this invisible in the first place.
+      if (!resolved) {
+        notFound.value = true;
+        internalParts.value = [];
+        childMachines.value = [];
+        itemsFound.value = 0;
+        options.onItemsFoundChange?.(0);
+        totalPages.value = 1;
+        return;
+      }
+      notFound.value = false;
+      const machine = resolved.machine;
 
       const partsResponse = machine?.sparePartProducts as SparePartsResponse | undefined;
       const items = (partsResponse?.items ?? []) as SparePart[];
@@ -306,6 +356,7 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
       termRef,
       languageRef,
       machineLanguageRef,
+      () => (machineLanguagesRef.value ?? []).join(','),
       companyIdRef,
       () => JSON.stringify(textFiltersRef.value ?? []),
       priceMinRef,
@@ -335,5 +386,6 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
     totalPages,
     fetchParts,
     goToPage,
+    notFound: computed(() => !isControlled.value && notFound.value),
   };
 }

@@ -8,6 +8,86 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.22.0] - 2026-09-24
+
+### Fixed
+
+- **An absent boolean prop meant `false`, not "not given" — so the provider was
+  never consulted for VAT.** `defineProps<{ includeTax?: boolean }>()` compiles
+  to `{ type: Boolean }`, and Vue casts an absent `Boolean` prop to `false`
+  rather than leaving it `undefined`. `useInfraProps` asked
+  `props[key] !== undefined`, saw that phantom `false`, treated it as an
+  explicit override and skipped `<PropellerProvider>` entirely. A shop
+  configured for incl-VAT prices rendered **every** price excl. VAT unless each
+  host passed `includeTax` by hand — on `ProductPrice`, `ProductCard`,
+  `ProductGrid`, `ProductSlider`, `ProductBulkPrices`, `ProductBundles`,
+  `ProductInfo`, `SearchBar`, `CartItem`, `ClusterCard`, `AddToCart`,
+  `CartBonusItems`, `FavoriteListDetails`, `FavoriteListItem` and
+  `ItemsOverview`.
+
+  `useInfraProps` now asks the component instance what the parent actually
+  passed (`vnode.props`, which is pre-cast), so the question it answers is
+  "did the host set this?" rather than "is this defined?". String keys
+  (`language`, `currency`) were never affected — which is why the locale fix
+  held while VAT kept coming back. Fixed in one place, so it covers every
+  boolean infra key including ones added later. Explicit props still win, and
+  a kebab-cased attribute (`:include-tax`) counts as explicit.
+
+- **Boolean props documented as defaulting to `true` defaulted to `false`.**
+  The same cast, reached a different way: `showStock ?? true` can never see
+  `undefined`, so the `?? true` was dead code.
+  - `MachineGrid` — stock, prices, add-to-cart and cart creation were all off
+    unless passed, while the React twin had them on. This is the parity gap
+    reported against 0.20.0. (PWP-995)
+  - `ProductBundles.showIndividualItems` — bundle contents were never listed.
+  - `ProductBundles.showLoginPrompt`, `ProductPrice.showLoginPrompt` — the
+    "log in to see prices" prompt never rendered.
+  - `ProductCard.allowIncrDecr`, `ProductSlider.allowAddToCart`.
+  - `PriceToggle` — `value` is the controlled/uncontrolled sentinel, so the
+    cast pinned the toggle in controlled mode: an uncontrolled toggle sat at
+    "excl. VAT" and ignored its own clicks. `initialState` was affected too.
+  - `ProductGrid.applyOrderlists`, `SearchBar.applyOrderlists`,
+    `QuickOrder.applyOrderlists` — downstream reads `=== false` as "the host
+    deliberately disabled orderlist scoping", so contract scoping was silently
+    off on every listing that did not pass it.
+
+  `scripts/check-boolean-defaults.mjs` (`npm run check:props`, also wired into
+  `prepublishOnly`) now fails the build when a prop's doc comment promises a
+  `true` default that the compiled component does not carry. The doc comment is
+  the spec; nothing needs updating when a component is added.
+
+- **A machine listed in one language could not be opened.** 0.20.0 stopped the
+  listing from narrowing to a single language, so an NL-only installation
+  appears in an EN tree and is linked by its NL slug — but `machine(slug:)`
+  resolves a slug **only** in the language it was authored in, so following
+  that link asked for `machine(slug: "<NL slug>", language: "EN")` and got
+  `SPARE_PARTS_MACHINE_NOT_FOUND_ERROR`. The page then showed a title derived
+  from the slug, no parts and no error: the bug moved one click deeper instead
+  of going away. `useSpareParts` now tries the tree language, then the
+  storefront language, then any locales given in the new `machineLanguages`
+  option, and upper-cases each (the API matches case exactly — `nl` misses
+  where `NL` hits). A slug that resolves in none of them sets the new
+  `notFound` flag, and `MachineGrid` renders "This machine could not be found."
+  instead of an empty listing. A fully-translated shop still costs exactly one
+  request. (PWP-993)
+
+- **"Qty in machine" and "Search parts…" stayed English in a translated shop.**
+  Both were read from `toolbarLabels`, which is forwarded verbatim to
+  `GridToolbar` — so they belonged to no toolbar dictionary, and a shop that
+  translated its `GridToolbar` keys properly still got English. They now come
+  from `machineCardLabels` (the grid's own label bag, alongside `loading`,
+  `noMachines` and the new `machineNotFound`), falling back to `toolbarLabels`
+  so hosts that already set them keep working. (PWP-995a)
+
+### Added
+
+- `MachineGrid.machineLanguages` / `useSpareParts.machineLanguages` — the
+  locales to try when a machine slug does not resolve in the tree language.
+- `useSpareParts().notFound` — the slug resolved in none of the candidate
+  languages, as distinct from "resolved but has no parts".
+- `machineCardLabels.machineNotFound` — copy for that state.
+
+
 ## [0.21.0] - 2026-09-24
 
 ### Fixed

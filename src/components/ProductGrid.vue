@@ -603,6 +603,11 @@ const props = withDefaults(defineProps<ProductGridProps>(), {
   showPrice: true,
   showStock: false,
   isLoading: false,
+  // Must stay `undefined`: `useProductInfo` reads `=== false` as "the host
+  // deliberately disabled orderlist scoping". Vue casts an absent Boolean prop
+  // to `false`, so contract scoping was switched off on every grid that did not
+  // pass this explicitly.
+  applyOrderlists: undefined,
 });
 
 // Resolve infrastructure props (graphqlClient, configuration, user, companyId,

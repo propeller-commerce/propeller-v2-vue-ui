@@ -991,6 +991,7 @@ const props = withDefaults(defineProps<ProductCardProps>(), {
   showSku: true,
   showPrice: true,
   allowAddToCart: true,
+  allowIncrDecr: true,
   showAvailability: true,
   showShortDescription: false,
   showManufacturer: false,

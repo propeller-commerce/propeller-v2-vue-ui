@@ -417,6 +417,7 @@ export interface ProductSliderProps {
 const props = withDefaults(defineProps<ProductSliderProps>(), {
   showAvailability: true,
   showIncrDecr: true,
+  allowAddToCart: true,
   showStock: false,
   enableAddFavorite: false,
 });

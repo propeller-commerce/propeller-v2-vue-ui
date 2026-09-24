@@ -642,7 +642,13 @@ interface ProductBundlesState {
   initCart: () => Promise<string>;
 }
 
-const props = defineProps<ProductBundlesProps>();
+// Both documented as defaulting to true; Vue casts an ABSENT Boolean prop to
+// `false`, so bundle items were never listed and the login prompt never showed
+// unless a host passed them. See `useInfraProps` for the same bug on infra keys.
+const props = withDefaults(defineProps<ProductBundlesProps>(), {
+  showIndividualItems: true,
+  showLoginPrompt: true,
+});
 const infra = useInfraProps(props);
 
 const userRef = computed(() => infra.user ?? null);

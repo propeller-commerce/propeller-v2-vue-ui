@@ -301,7 +301,9 @@ interface SearchBarState {
   handleViewAllClick: () => void;
 }
 
-const props = defineProps<SearchBarProps>();
+// `applyOrderlists` must stay `undefined` when unset: downstream reads `=== false`
+// as "deliberately disabled", and Vue casts an absent Boolean prop to `false`.
+const props = withDefaults(defineProps<SearchBarProps>(), { applyOrderlists: undefined });
 const infra = useInfraProps(props);
 
 const userRef = computed(() => (infra.user ?? null) as Contact | Customer | null);

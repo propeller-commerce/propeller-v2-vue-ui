@@ -1,7 +1,23 @@
-import { reactive } from 'vue';
+import { getCurrentInstance, reactive } from 'vue';
 import { usePropellerContext, type PropellerInfra } from '../../context/PropellerContext';
 
 type InfraKey = keyof PropellerInfra;
+
+/** `fooBar` -> `foo-bar`, so a template writing `:include-tax` is recognised. */
+function kebab(key: string): string {
+  return key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+}
+
+/**
+ * Did the parent actually pass this prop? Falls back to `true` when there is no
+ * instance (a composable called outside a component, e.g. in a unit test), so
+ * the previous "explicit value wins" behaviour is preserved there.
+ */
+function wasPassed(instance: ReturnType<typeof getCurrentInstance>, key: string): boolean {
+  const raw = instance?.vnode?.props;
+  if (!raw) return !instance;
+  return key in raw || kebab(key) in raw;
+}
 
 const INFRA_KEYS: InfraKey[] = [
   'graphqlClient',
@@ -44,6 +60,21 @@ export function useInfraProps<P extends Partial<Record<InfraKey, unknown>>>(
 ): P & Partial<PropellerInfra> {
   // Resolve once at setup — inject() is only valid here.
   const ctx = usePropellerContext();
+  // `instance.vnode.props` is what the PARENT actually passed, before Vue
+  // applies prop defaults and type casting. We need it because a resolved
+  // `props` object cannot answer "did the host pass this?" for a boolean:
+  // `defineProps<{ includeTax?: boolean }>()` compiles to `{ type: Boolean }`,
+  // and Vue casts an ABSENT Boolean prop to `false`, not `undefined`. Reading
+  // the resolved props therefore saw an explicit `false` on every component
+  // nobody passed `includeTax` to, and the provider was never consulted — a
+  // shop configured for incl-VAT prices rendered every price excl. VAT.
+  //
+  // String keys (`language`, `currency`) were never affected, which is why
+  // locale resolution worked while VAT kept coming back.
+  //
+  // `instance.vnode` is reassigned on each re-render, so reading it lazily
+  // inside the getters below keeps this reactive to prop changes.
+  const instance = getCurrentInstance();
 
   const merged: Record<string, unknown> = {};
   // Forward every non-infra key as a getter so reads on the returned object
@@ -66,8 +97,10 @@ export function useInfraProps<P extends Partial<Record<InfraKey, unknown>>>(
       enumerable: true,
       configurable: true,
       get() {
-        const explicit = (props as Record<string, unknown>)[key];
-        if (explicit !== undefined && explicit !== null) return explicit;
+        if (wasPassed(instance, key)) {
+          const explicit = (props as Record<string, unknown>)[key];
+          if (explicit !== undefined && explicit !== null) return explicit;
+        }
         return ctx ? (ctx as unknown as Record<string, unknown>)[key] : undefined;
       },
     });

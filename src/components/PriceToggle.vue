@@ -63,7 +63,15 @@ interface PriceToggleState {
   handleToggle: () => void;
 }
 
-const props = defineProps<PriceToggleProps>();
+// `value` MUST stay `undefined` when unset — it is the controlled/uncontrolled
+// sentinel, and Vue's cast of an absent Boolean prop to `false` made
+// `isControlled` permanently true, so an uncontrolled toggle was frozen at
+// "excl. VAT" and ignored its own clicks. `initialState` is documented as
+// defaulting to true and was reaching `?? true` as `false` for the same reason.
+const props = withDefaults(defineProps<PriceToggleProps>(), {
+  value: undefined,
+  initialState: true,
+});
 const isControlled = computed(() => props.value !== undefined);
 // Local state for uncontrolled mode only.
 const internal = ref<PriceToggleState['isOn']>(props.initialState ?? true);

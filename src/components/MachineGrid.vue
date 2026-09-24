@@ -28,6 +28,23 @@
       </div>
     </template>
 
+    <!-- The slug resolved in no language we know of. Without this the page
+         rendered a title title-cased from the URL above an empty parts list and
+         no error, so a machine that could not be opened looked exactly like one
+         with no parts (PWP-993). -->
+    <template v-else-if="notFound && !partsLoading">
+      <nav aria-label="Breadcrumb" class="propeller-breadcrumbs mb-6">
+        <ol class="flex flex-wrap items-center gap-2 text-sm text-foreground-subtle">
+          <li>
+            <a :href="basePath" class="hover:text-primary">{{ rootTitle ?? 'Machines' }}</a>
+          </li>
+        </ol>
+      </nav>
+      <p class="py-12 text-center text-foreground-subtle">
+        {{ getMachineLabel('machineNotFound', 'This machine could not be found.') }}
+      </p>
+    </template>
+
     <!-- ── Node render ─────────────────────────────────────────────────────── -->
     <template v-else>
       <!-- Breadcrumbs from the URL segments — leaf name from the fetched machine,
@@ -103,8 +120,8 @@
             <input
               v-model="searchDraft"
               type="search"
-              :placeholder="toolbarLabels?.searchParts ?? 'Search parts…'"
-              :aria-label="toolbarLabels?.searchParts ?? 'Search parts'"
+              :placeholder="getMachineLabel('searchParts', 'Search parts…')"
+              :aria-label="getMachineLabel('searchParts', 'Search parts')"
               class="w-full rounded border border-border bg-card px-3 py-2"
               @keydown.enter="submitSearch"
             />
@@ -145,16 +162,16 @@
             :products="partProducts"
             :isLoading="partsLoading"
             :onProductClick="onProductClick"
-            :allowAddToCart="allowAddToCart ?? true"
-            :showPrice="showPrice ?? true"
+            :allowAddToCart="allowAddToCart"
+            :showPrice="showPrice"
             :showModal="true"
-            :createCart="createCart ?? true"
+            :createCart="createCart"
             :cartId="cartId"
             :onCartCreated="onCartCreated"
             :afterAddToCart="afterAddToCart"
             :columns="viewMode === 'list' ? 1 : 3"
-            :showAvailability="showAvailability ?? false"
-            :showStock="showStock ?? true"
+            :showAvailability="showAvailability"
+            :showStock="showStock"
             :productCardComponent="productCardComponent"
             :productCardLabels="productCardLabels"
             :addToCartLabels="addToCartLabels"
@@ -258,6 +275,16 @@ export interface MachineGridProps {
   // ── Tree ─────────────────────────────────────────────────────────────────
   /** Language the machine tree is authored in (usually EN). Defaults to `'EN'`. */
   machineLanguage?: string;
+  /**
+   * Other languages the tree may be authored in, tried in order when a slug
+   * does not resolve in `machineLanguage`.
+   *
+   * A slug resolves only in its own language, so a half-translated tree lists a
+   * machine by its NL slug and then cannot open it with `language: 'EN'`. Pass
+   * the shop's locales here; `machineLanguage` and the storefront `language`
+   * are always tried first (PWP-993).
+   */
+  machineLanguages?: string[];
 
   // ── Controlled listing (parts) ───────────────────────────────────────────
   listing: MachineListingState;
@@ -301,10 +328,19 @@ export interface MachineGridProps {
   filtersLabels?: Record<string, string>;
   toolbarLabels?: Record<string, string>;
   /**
-   * Labels for the machine side of the grid. Keys read here: `loading` and
-   * `noMachines`. The same object is passed to each `MachineCard` as its
-   * `labels`, which reads `viewMachine` — so all three keys belong in it
-   * (PWP-995d).
+   * Labels for the machine side of the grid.
+   *
+   * Keys read here: `loading`, `noMachines`, `machineNotFound`,
+   * `quantityInMachine` and `searchParts`. The same object is passed to each
+   * `MachineCard` as its `labels`, which reads `viewMachine` — so all six keys
+   * belong in it (PWP-995d).
+   *
+   * `quantityInMachine` and `searchParts` used to be read from `toolbarLabels`,
+   * which is forwarded verbatim to `GridToolbar`: a shop that translated its
+   * toolbar dictionary properly still got "Qty in machine" and "Search parts…"
+   * in English, because those keys belong to no toolbar (PWP-995a). They are
+   * still read from `toolbarLabels` as a fallback so existing hosts keep
+   * working.
    */
   machineCardLabels?: Record<string, string>;
 
@@ -325,9 +361,24 @@ export interface MachineGridProps {
   className?: string;
 }
 
-const props = defineProps<MachineGridProps>();
+// Spelled out rather than left to `showStock ?? true` in the template: Vue casts
+// an ABSENT Boolean prop to `false`, not `undefined`, so `?? true` never fired
+// and the grid shipped with stock, prices and add-to-cart switched off unless
+// the host passed each one — while the React twin showed them (PWP-995).
+const props = withDefaults(defineProps<MachineGridProps>(), {
+  createCart: true,
+  allowAddToCart: true,
+  showPrice: true,
+  showStock: true,
+  showAvailability: false,
+});
+/**
+ * The grid's own strings. `machineCardLabels` first, then `toolbarLabels` for
+ * hosts that already put `quantityInMachine` / `searchParts` there, then
+ * English (PWP-995a).
+ */
 function getMachineLabel(key: string, fallback: string): string {
-  return _getLabel(props.machineCardLabels, key, fallback);
+  return props.machineCardLabels?.[key] ?? props.toolbarLabels?.[key] ?? fallback;
 }
 
 // Explicit props win; otherwise infra resolves from <PropellerProvider>.
@@ -381,7 +432,7 @@ const { machines: rootMachines, isLoading: rootLoading } = useMachines({
 });
 
 // ── Node: this machine's parts + direct children ───────────────────────────
-const { displayParts, childMachines, isLoading: partsLoading, currentPage, totalPages } =
+const { displayParts, childMachines, isLoading: partsLoading, currentPage, totalPages, notFound } =
   useSpareParts({
     graphqlClient: infra.graphqlClient as GraphQLClient | undefined,
     // Idle at the root (no slug).
@@ -389,6 +440,7 @@ const { displayParts, childMachines, isLoading: partsLoading, currentPage, total
     term: computed(() => props.listing.term || undefined),
     language,
     machineLanguage,
+    machineLanguages: computed(() => props.machineLanguages),
     taxZone: props.taxZone,
     user: computed(() => (infra.user as Contact | Customer | null) ?? null),
     companyId: computed(() => infra.companyId as number | undefined),
@@ -462,7 +514,7 @@ const QtyBelowName: Component = defineComponent({
       const sku = (cprops.product as { sku?: string })?.sku;
       const qty = sku ? quantityBySku.value.get(sku) : undefined;
       if (!qty) return null;
-      const label = props.toolbarLabels?.quantityInMachine ?? 'Qty in machine';
+      const label = getMachineLabel('quantityInMachine', 'Qty in machine');
       return h(
         'span',
         { class: 'propeller-spare-part__quantity text-sm text-foreground-subtle' },
