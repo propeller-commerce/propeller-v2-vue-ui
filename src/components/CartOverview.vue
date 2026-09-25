@@ -319,6 +319,9 @@ export interface CartOverviewProps {
    */
   countries?: { code: string; name: string }[];
 
+  /** Maps a lowercased payment-method code to its display name. Falls back to the raw value. */
+  paymethodLabels?: Record<string, string>;
+
   /** Logged-in user — used for the purchase-authorization check. Resolved from PropellerProvider when omitted. */
   user?: Contact | Customer | null;
 
@@ -399,7 +402,9 @@ const deliveryAddress = computed(() => {
   return props.cart?.deliveryAddress;
 });
 const paymentMethod = computed(() => {
-  return props.cart?.paymentData?.method || "";
+  const raw = props.cart?.paymentData?.method || "";
+  if (!raw) return "";
+  return props.paymethodLabels?.[raw.toLowerCase()] || raw;
 });
 const carrierName = computed(() => {
   return props.cart?.postageData?.carrier || "";

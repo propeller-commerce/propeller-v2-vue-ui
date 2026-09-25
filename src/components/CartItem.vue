@@ -502,6 +502,8 @@
           class="propeller-cart-item__delete h-8 w-8 p-0 ml-auto inline-flex items-center justify-center rounded-[var(--radius-control)] text-foreground-subtle hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
           @click="async (event) => handleDelete()"
           :disabled="deleting"
+          :aria-label="getLabel('deleteLabel', 'Remove item')"
+          :title="getLabel('deleteLabel', 'Remove item')"
         >
           <template v-if="deleting">
             <div
