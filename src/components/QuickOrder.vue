@@ -57,6 +57,8 @@ export interface QuickOrderProps {
   };
   /** Tax zone for price calculation. Defaults to `'NL'`. */
   taxZone?: string;
+  /** Show tax-inclusive prices. Resolves from the Propeller provider. */
+  includeTax?: boolean;
   /** Orderlist (contract) ids to scope the catalogue by. */
   orderlistIds?: number[];
   /** Set `false` to ignore `orderlistIds`. Defaults to true when ids are given. */
@@ -108,7 +110,10 @@ interface Row {
   productId: number | null;
   clusterId?: number;
   name: string;
+  /** Unit price incl. VAT. */
   netPrice: number;
+  /** Unit price excl. VAT. */
+  grossPrice: number;
   quantity: number;
   minQuantity: number;
   matches: QuickOrderMatch[];
@@ -126,6 +131,7 @@ function blankRow(): Row {
     productId: null,
     name: '',
     netPrice: 0,
+    grossPrice: 0,
     quantity: 1,
     minQuantity: 1,
     matches: [],
@@ -138,7 +144,10 @@ function blankRow(): Row {
 
 // `applyOrderlists` must stay `undefined` when unset: downstream reads `=== false`
 // as "deliberately disabled", and Vue casts an absent Boolean prop to `false`.
-const props = withDefaults(defineProps<QuickOrderProps>(), { applyOrderlists: undefined });
+const props = withDefaults(defineProps<QuickOrderProps>(), {
+  applyOrderlists: undefined,
+  includeTax: undefined,
+});
 const infra = useInfraProps(props);
 
 const currency = computed(() => props.currency ?? '€');
@@ -151,6 +160,11 @@ const maxUploadRows = computed(() => props.maxUploadRows ?? 500);
 
 function getLabel(key: string, fallback: string): string {
   return _getLabel(props.labels, key, fallback);
+}
+
+const includeTax = computed(() => (infra.includeTax as boolean | undefined) ?? props.includeTax ?? false);
+function rowPrice(r: Row): number {
+  return includeTax.value ? r.netPrice : r.grossPrice;
 }
 
 // Price formatter — a consumer-supplied `formatPrice` wins (it owns its own
@@ -189,7 +203,7 @@ function patchRow(key: string, patch: Partial<Row>) {
 
 // ── Typeahead ────────────────────────────────────────────────────────────────
 function onCodeInput(key: string, value: string) {
-  patchRow(key, { code: value, productId: null, name: '', netPrice: 0, searched: false });
+  patchRow(key, { code: value, productId: null, name: '', netPrice: 0, grossPrice: 0, searched: false });
   notice.value = null;
   if (searchTimers[key]) clearTimeout(searchTimers[key]);
   if (value.trim().length < searchThreshold.value) {
@@ -207,7 +221,7 @@ function selectMatch(key: string, match: QuickOrderMatch) {
   const dup = rows.value.some((r) => r.key !== key && r.productId && r.code === match.sku);
   if (dup) {
     notice.value = getLabel('alreadyInList', 'Product is already in the list');
-    patchRow(key, { code: '', matches: [], productId: null, name: '', netPrice: 0, searched: false });
+    patchRow(key, { code: '', matches: [], productId: null, name: '', netPrice: 0, grossPrice: 0, searched: false });
     return;
   }
   patchRow(key, {
@@ -216,6 +230,7 @@ function selectMatch(key: string, match: QuickOrderMatch) {
     clusterId: match.clusterId,
     name: match.name,
     netPrice: match.netPrice,
+    grossPrice: match.grossPrice,
     quantity: match.minQuantity,
     minQuantity: match.minQuantity,
     matches: [],
@@ -277,6 +292,7 @@ async function onFileChosen(e: Event) {
         clusterId: exact.clusterId,
         name: exact.name,
         netPrice: exact.netPrice,
+        grossPrice: exact.grossPrice,
         quantity: Math.max(exact.minQuantity, line.quantity),
         minQuantity: exact.minQuantity,
       });
@@ -351,7 +367,7 @@ async function handleSubmit() {
         <div class="hidden md:grid grid-cols-12 gap-2 px-2 pb-2 text-xs font-medium text-muted-foreground border-b border-border">
           <div class="col-span-3">{{ getLabel('colCode', 'Article no. / SKU') }}</div>
           <div class="col-span-3">{{ getLabel('colName', 'Product name') }}</div>
-          <div class="col-span-2">{{ getLabel('colPrice', 'excl. VAT') }}</div>
+          <div class="col-span-2">{{ includeTax ? getLabel('colPriceInclVat', 'incl. VAT') : getLabel('colPrice', 'excl. VAT') }}</div>
           <div class="col-span-1">{{ getLabel('colQuantity', 'Qty') }}</div>
           <div class="col-span-2 text-right">{{ getLabel('colTotal', 'Total') }}</div>
           <div class="col-span-1" />
@@ -401,7 +417,7 @@ async function handleSubmit() {
 
             <!-- Net price -->
             <div class="col-span-3 md:col-span-2">
-              <input type="text" :value="r.productId ? displayPrice(r.netPrice) : ''" disabled class="w-full rounded border border-input bg-muted/40 px-2 py-1.5 text-sm text-muted-foreground" />
+              <input type="text" :value="r.productId ? displayPrice(rowPrice(r)) : ''" disabled class="w-full rounded border border-input bg-muted/40 px-2 py-1.5 text-sm text-muted-foreground" />
             </div>
 
             <!-- Quantity -->
@@ -420,7 +436,7 @@ async function handleSubmit() {
 
             <!-- Line total -->
             <div class="col-span-9 md:col-span-2 text-right text-sm text-foreground whitespace-nowrap">
-              {{ r.productId ? displayPrice(r.netPrice * r.quantity) : '' }}
+              {{ r.productId ? displayPrice(rowPrice(r) * r.quantity) : '' }}
             </div>
 
             <!-- Remove -->

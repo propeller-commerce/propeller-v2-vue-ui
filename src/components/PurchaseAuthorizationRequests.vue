@@ -171,12 +171,12 @@
                             <th
                               class="text-right px-3 py-2 font-medium text-muted-foreground"
                             >
-                              {{ getLabel("itemUnitPrice", "Unit price") }}
+                              {{ getLabel("itemUnitPrice", "Unit price excl. VAT") }}
                             </th>
                             <th
                               class="text-right px-3 py-2 font-medium text-muted-foreground"
                             >
-                              {{ getLabel("itemTotal", "Total") }}
+                              {{ getLabel("itemTotal", "Total excl. VAT") }}
                             </th>
                           </tr>
                         </thead>
@@ -203,7 +203,7 @@
                                 }}
                               </td>
                               <td class="px-3 py-2 text-right font-medium">
-                                {{ formatPrice(item.totalSumNet ?? 0) }}
+                                {{ formatPrice(item.totalSum ?? 0) }}
                               </td>
                             </tr>
                           </template>
