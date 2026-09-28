@@ -22,7 +22,7 @@
         ><input
           type="search"
           autoComplete="off"
-          class="propeller-search-bar__input w-full pl-10 pr-10 py-2 bg-card border border-input rounded-[var(--radius-container)] focus:outline-none focus:ring-2 focus:ring-secondary placeholder:text-muted-foreground"
+          class="propeller-search-bar__input w-full pl-10 pr-10 py-2 bg-card text-foreground border border-input rounded-[var(--radius-container)] focus:outline-none focus:ring-2 focus:ring-secondary placeholder:text-muted-foreground"
           :placeholder="placeholder"
           :value="searchTerm"
           @input="async (e) => handleInputChange((e.target as HTMLInputElement).value)"
@@ -36,7 +36,7 @@
     </form>
     <template v-if="showDropdown">
       <div
-        class="propeller-search-bar__dropdown absolute top-full left-0 right-0 mt-2 bg-card rounded-[var(--radius-container)] shadow-xl border z-50 flex flex-col max-h-96"
+        class="propeller-search-bar__dropdown absolute top-full left-0 right-0 mt-2 bg-card text-foreground rounded-[var(--radius-container)] shadow-xl border z-50 flex flex-col max-h-96"
       >
         <template v-if="results.length > 0">
           <div class="propeller-search-bar__results flex-1 overflow-y-auto">

@@ -49,7 +49,7 @@
       </button>
       <template v-if="showTotals && isHovered && getTotalItems() > 0">
         <div
-          class="propeller-cart-icon__popover absolute top-full right-0 mt-1 z-40 bg-card border border-border rounded-[var(--radius-container)] shadow-lg px-3 py-2 min-w-[140px] text-sm whitespace-nowrap"
+          class="propeller-cart-icon__popover absolute top-full right-0 mt-1 z-40 bg-card text-foreground border border-border rounded-[var(--radius-container)] shadow-lg px-3 py-2 min-w-[140px] text-sm whitespace-nowrap"
         >
           <div class="flex justify-between gap-4">
             <span
@@ -82,7 +82,7 @@
       :aria-label="getSidebarTitle()"
       :data-open="sidebarOpen ? 'true' : 'false'"
       :class="cn(
-        'propeller-cart-icon__sidebar fixed inset-y-0 right-0 z-[70] w-full max-w-md bg-card shadow-2xl transform transition-transform duration-300 ease-in-out border-l border-border',
+        'propeller-cart-icon__sidebar fixed inset-y-0 right-0 z-[70] w-full max-w-md bg-card text-foreground shadow-2xl transform transition-transform duration-300 ease-in-out border-l border-border',
         sidebarOpen ? 'translate-x-0' : 'translate-x-full',
         sidebarClassName,
       )"

@@ -334,6 +334,18 @@
               :labels="props.addToCartLabels"
               :on-login-click="props.onLoginClick"
             />
+            <!-- A quoted price cannot be ordered from a grid: the quantity
+                 stepper has no price to multiply and the line would submit at
+                 0. Send the shopper to the product page, which owns the
+                 request-a-price flow. -->
+            <a
+              v-else-if="priceOnRequest"
+              :href="getProductUrl()"
+              @click="handleProductClick"
+              class="propeller-product-card__view-product inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-control)] bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              {{ getPriceLabel('requestPrice', 'Request a price') }}
+            </a>
             <component
               v-else-if="props.addToCartComponent"
               :is="AddToCartImpl"
@@ -618,6 +630,18 @@
               :labels="props.addToCartLabels"
               :on-login-click="props.onLoginClick"
             />
+            <!-- A quoted price cannot be ordered from a grid: the quantity
+                 stepper has no price to multiply and the line would submit at
+                 0. Send the shopper to the product page, which owns the
+                 request-a-price flow. -->
+            <a
+              v-else-if="priceOnRequest"
+              :href="getProductUrl()"
+              @click="handleProductClick"
+              class="propeller-product-card__view-product inline-flex h-10 w-full items-center justify-center rounded-[var(--radius-control)] bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              {{ getPriceLabel('requestPrice', 'Request a price') }}
+            </a>
             <component
               v-else-if="props.addToCartComponent"
               :is="AddToCartImpl"
@@ -1114,6 +1138,10 @@ function getLabel(
   fallback: string,
 ): ReturnType<ProductCardState["getLabel"]> {
   return _getLabel(props.labels, key, fallback);
+}
+/** Price-block strings live in `priceLabels`, not the card's own `labels`. */
+function getPriceLabel(key: string, fallback: string): string {
+  return _getLabel(props.priceLabels, key, fallback);
 }
 function getAttributeValue(
   code: string,

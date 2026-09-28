@@ -9,14 +9,14 @@
     } ${className || ''}`"
     @click="handleClick"
   >
-    <MessageSquareQuote class="propeller-request-price__icon w-4 h-4" aria-hidden="true" />
+    <Tag class="propeller-request-price__icon w-4 h-4" aria-hidden="true" />
     {{ label }}
   </button>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { MessageSquareQuote } from 'lucide-vue-next';
+import { Tag } from 'lucide-vue-next';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 
 export interface RequestPriceButtonProps {

@@ -223,7 +223,7 @@
         :labels="labels"
       >
         <template
-          v-if="allowAddToCart !== false && isProduct() && !!graphqlClient"
+          v-if="allowAddToCart !== false && isProduct() && !!graphqlClient && !isPriceOnRequest(item as never)"
         >
           <AddToCart
             :graphqlClient="graphqlClient"
@@ -284,6 +284,7 @@
 </template>
 
 <script setup lang="ts">
+import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
 import { computed } from "vue";
 import {
   Product,
