@@ -116,6 +116,8 @@ interface Row {
   grossPrice: number;
   quantity: number;
   minQuantity: number;
+  /** Order step for the resolved product. */
+  step: number;
   matches: QuickOrderMatch[];
   searching: boolean;
   /** `true` once a search completed for the current input (drives "no results"). */
@@ -134,6 +136,7 @@ function blankRow(): Row {
     grossPrice: 0,
     quantity: 1,
     minQuantity: 1,
+    step: 1,
     matches: [],
     searching: false,
     searched: false,
@@ -240,10 +243,17 @@ function selectMatch(key: string, match: QuickOrderMatch) {
     grossPrice: match.grossPrice,
     quantity: match.minQuantity,
     minQuantity: match.minQuantity,
+    step: match.step,
     matches: [],
     searching: false,
     searched: false,
   });
+}
+
+/** Round to the nearest orderable quantity: at least `min`, on the `min + n*step` grid. */
+function snapToStep(value: number, min: number, step: number): number {
+  if (!Number.isFinite(value) || value <= min) return min;
+  return Math.round((value - min) / (step || 1)) * (step || 1) + min;
 }
 
 function setQuantity(key: string, raw: string) {
@@ -251,7 +261,7 @@ function setQuantity(key: string, raw: string) {
   const i = rows.value.findIndex((r) => r.key === key);
   if (i === -1) return;
   const r = rows.value[i];
-  rows.value[i] = { ...r, quantity: Number.isFinite(n) && n > 0 ? Math.max(r.minQuantity, n) : r.minQuantity };
+  rows.value[i] = { ...r, quantity: snapToStep(n, r.minQuantity, r.step) };
 }
 
 function addRow() {
@@ -308,6 +318,7 @@ async function onFileChosen(e: Event) {
         grossPrice: exact.grossPrice,
         quantity: Math.max(exact.minQuantity, line.quantity),
         minQuantity: exact.minQuantity,
+        step: exact.step,
       });
     }
     if (resolved.length) rows.value = [...resolved, blankRow()];
@@ -438,7 +449,7 @@ async function handleSubmit() {
               <input
                 type="number"
                 :min="r.minQuantity"
-                :step="1"
+                :step="r.step || 1"
                 :value="r.productId ? r.quantity : ''"
                 :disabled="!r.productId"
                 class="w-full rounded border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted/40"

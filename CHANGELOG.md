@@ -8,6 +8,32 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.26.0] - 2026-09-28
+
+### Fixed
+
+- **A quantity field could not be cleared and retyped.** The typed-input handler
+  only committed a value once it was at or above the minimum, so with a minimum
+  of 2, backspacing to empty or typing "1" was ignored and the previous number
+  stayed stuck in the box. The field now accepts any keystroke while editing and
+  resolves to a valid quantity on blur. (PWP-970)
+
+- **Incrementing an off-grid quantity kept it off-grid.** `increment()` added the
+  step without first snapping to the `min + n*step` grid, so a quantity that was
+  already off it never returned. Both steppers now snap first. (PWP-970)
+
+- **Quick order ignored the order step.** Its quantity input was hardcoded to
+  `step={1}` and nothing snapped, while bulk paste and spreadsheet upload are the
+  primary ordering route for a wholesale account. `QuickOrderMatch` now carries
+  `step` alongside `minQuantity`, and typed quantities snap to it. (PWP-970)
+
+- **`OrderItemCard` warns when it cannot resolve what it needs.** This build
+  reads `language` and `configuration.urls` from the provider, so a host wiring
+  `<PropellerProvider>` was never exposed the way the React build was; what was
+  left is a host with neither prop nor provider value, which rendered a
+  wrong-language name and a link without the locale prefix and said nothing. A
+  development-only warning now names each case once. (PWP-972)
+
 ## [0.25.1] - 2026-09-28
 
 ### Fixed

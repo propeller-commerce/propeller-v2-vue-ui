@@ -20,17 +20,9 @@
             class="propeller-add-to-cart__quantity flex-1 md:flex-none md:w-12 text-center text-sm bg-transparent border-none focus:ring-0 focus:outline-none h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             :min="getMinQuantity(props.product)"
             :step="getStep(props.product)"
-            :value="quantity"
-            @change="
-              async (e) => {
-                const val = parseInt((e.target as HTMLInputElement).value, 10);
-                const min = getMinQuantity(props.product);
-                const step = getStep(props.product);
-                if (!isNaN(val) && val >= min) {
-                  quantity = Math.round((val - min) / step) * step + min;
-                }
-              }
-            "
+            :value="quantityDraft ?? quantity"
+            @input="(e) => handleQuantityInput((e.target as HTMLInputElement).value)"
+            @blur="handleQuantityBlur"
           /><button
             type="button"
             class="propeller-add-to-cart__increment px-3 h-full text-muted-foreground hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-r-[var(--radius-control)] select-none"
@@ -48,17 +40,9 @@
           class="propeller-add-to-cart__quantity w-full md:w-16 h-10 text-center text-sm border border-input rounded-[var(--radius-control)] focus:ring-2 focus:ring-secondary focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           :min="getMinQuantity(props.product)"
           :step="getStep(props.product)"
-          :value="quantity"
-          @change="
-            async (e) => {
-              const val = parseInt((e.target as HTMLInputElement).value, 10);
-              const min = getMinQuantity(props.product);
-              const step = getStep(props.product);
-              if (!isNaN(val) && val >= min) {
-                quantity = Math.round((val - min) / step) * step + min;
-              }
-            }
-          "
+          :value="quantityDraft ?? quantity"
+          @input="(e) => handleQuantityInput((e.target as HTMLInputElement).value)"
+          @blur="handleQuantityBlur"
         />
       </template>
 
@@ -629,6 +613,10 @@ const { cart, loading, checkoutAllowed, addItem, getMinQuantity, getStep } =
   });
 
 const quantity = ref<AddToCartState["quantity"]>(1);
+// What the field shows while typing. The committed quantity stays a number;
+// this holds the in-between states a number cannot represent - empty, or a
+// value below the minimum on the way to a larger one.
+const quantityDraft = ref<string | null>(null);
 const success = ref<AddToCartState["success"]>(false);
 const modalVisible = ref<AddToCartState["modalVisible"]>(false);
 // Bonus items this add earned. A promotion that grants a free product said
@@ -652,15 +640,43 @@ onMounted(() => {
   quantity.value = getMinQuantity(props.product);
 });
 
+/** Round to the nearest valid quantity: at least `min`, on the `min + n*step` grid. */
+function snapQuantity(value: number): number {
+  const min = getMinQuantity(props.product);
+  const step = getStep(props.product) || 1;
+  if (!Number.isFinite(value) || value <= min) return min;
+  return Math.round((value - min) / step) * step + min;
+}
 function increment(): ReturnType<AddToCartState["increment"]> {
-  quantity.value = quantity.value + getStep(props.product);
+  quantityDraft.value = null;
+  // Snap first: incrementing an off-grid quantity would otherwise keep it
+  // off-grid forever. Only a quantity already on the grid moves a full step.
+  const snapped = snapQuantity(quantity.value);
+  quantity.value = snapped === quantity.value ? quantity.value + getStep(props.product) : snapped;
 }
 function decrement(): ReturnType<AddToCartState["decrement"]> {
   const min = getMinQuantity(props.product);
   const step = getStep(props.product);
+  quantityDraft.value = null;
+  const snapped = snapQuantity(quantity.value);
+  if (snapped !== quantity.value) { quantity.value = snapped; return; }
   if (quantity.value - step >= min) {
     quantity.value = quantity.value - step;
   }
+}
+/** Accept any keystroke; commit only what is valid, and snap on blur. */
+function handleQuantityInput(raw: string): void {
+  quantityDraft.value = raw;
+  const val = parseInt(raw, 10);
+  if (!isNaN(val) && val >= getMinQuantity(props.product)) {
+    quantity.value = snapQuantity(val);
+  }
+}
+/** Leaving the field resolves whatever is in it to a valid quantity. */
+function handleQuantityBlur(): void {
+  const val = parseInt(quantityDraft.value ?? '', 10);
+  quantity.value = isNaN(val) ? getMinQuantity(props.product) : snapQuantity(val);
+  quantityDraft.value = null;
 }
 function showToast(
   message: string,

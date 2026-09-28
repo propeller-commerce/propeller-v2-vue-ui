@@ -55,6 +55,8 @@ export interface QuickOrderMatch {
   netPrice: number;
   grossPrice: number;
   minQuantity: number;
+  /** Order step: quantities run min, min+step, min+2*step, … (defaults to 1). */
+  step: number;
   imageUrl: string;
   /** Price is quoted on request — not orderable through a bulk flow. */
   priceOnRequest: boolean;
@@ -125,6 +127,7 @@ function toMatch(item: Product | Cluster, language?: string): QuickOrderMatch {
   const netPrice = displayItem?.price?.net ?? 0;
   const grossPrice = displayItem?.price?.gross ?? 0;
   const minQuantity = Math.max(1, (displayItem as Product)?.minimumQuantity ?? 1);
+  const step = Math.max(1, (displayItem as Product)?.unit ?? 1);
   const imageUrl = isCluster
     ? getClusterImageUrl(item as Cluster)
     : getProductImageUrl(item as Product);
@@ -136,6 +139,7 @@ function toMatch(item: Product | Cluster, language?: string): QuickOrderMatch {
     netPrice,
     grossPrice,
     minQuantity,
+    step,
     imageUrl,
     priceOnRequest: isPriceOnRequest(item),
   };

@@ -304,6 +304,48 @@ const props = withDefaults(defineProps<OrderItemCardProps>(), {
 });
 const infra = useInfraProps(props);
 
+/**
+ * Warn, in development only, when something this component needs to be CORRECT
+ * could not be resolved.
+ *
+ * Unlike the React build, this one reads `language` and `configuration.urls`
+ * from the provider, so a host that wires `<PropellerProvider>` is already
+ * covered. What is left is a host with neither prop nor provider value: the
+ * card then renders a name in whichever language the backend returned first,
+ * and a link that drops the locale prefix. Nothing fails, so it surfaces two
+ * clicks later as a mystery rather than at the call site.
+ *
+ * Each message is emitted once per process so a re-render cannot flood the
+ * console.
+ */
+const warnedOnce = new Set<string>();
+
+function warnOnce(key: string, message: string): void {
+  if (warnedOnce.has(key)) return;
+  warnedOnce.add(key);
+  // eslint-disable-next-line no-console
+  console.warn(message);
+}
+
+function warnMissingProps(): void {
+  if (process.env.NODE_ENV === 'production') return;
+  if (!infra.language) {
+    warnOnce(
+      'language',
+      '[OrderItemCard] No `language` from props or <PropellerProvider>: product names ' +
+        'resolve in whichever language the backend returned first.'
+    );
+  }
+  if (props.titleLinkable && !hostUrls.value) {
+    warnOnce(
+      'urls',
+      '[OrderItemCard] Title is linkable but no `configuration.urls` was resolved: links ' +
+        'fall back to a literal /product/:id/:slug and lose the locale prefix. Pass the ' +
+        'url builders through <PropellerProvider>, or set :titleLinkable="false".'
+    );
+  }
+}
+
 // Direct prop > default. No `useResolvedProps` here — mirrors React's
 // RSC-safe design where OrderItemCard skips the resolver to stay safe to
 // render in server contexts.
@@ -381,6 +423,8 @@ const clusterUrl = computed(() => {
     "/cluster/" + id + "/" + slug
   );
 });
+warnMissingProps();
+
 const productUrl = computed(() => {
   if (clusterUrl.value) return clusterUrl.value;
   if (productId.value && productSlug.value) {
