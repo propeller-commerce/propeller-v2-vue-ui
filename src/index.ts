@@ -133,6 +133,23 @@ export {
   type UseQuickOrderOptions,
   type UseQuickOrderReturn,
 } from './composables/vue/useQuickOrder';
+
+export {
+  usePriceRequest,
+  PRICE_REQUEST_STORAGE_KEY,
+  type UsePriceRequestOptions,
+  type UsePriceRequestReturn,
+} from './composables/vue/usePriceRequest';
+
+export {
+  addItem as addPriceRequestItem,
+  removeItem as removePriceRequestItem,
+  setItemQuantity as setPriceRequestItemQuantity,
+  containsItem as priceRequestContains,
+  type PriceRequestItem,
+} from './composables/shared/utils/priceRequestList';
+
+export { isPriceOnRequest } from './composables/shared/utils/priceOnRequest';
 export {
   useMachines,
   buildRootMachinesQuery,
@@ -228,6 +245,10 @@ export { default as OrderActions } from './components/OrderActions.vue';
 export { default as OrderBonusItems } from './components/OrderBonusItems.vue';
 export { default as OrderItemCard } from './components/OrderItemCard.vue';
 export { default as OrderList } from './components/OrderList.vue';
+export { default as PriceRequestList } from './components/PriceRequestList.vue';
+export type { PriceRequestListProps } from './components/PriceRequestList.vue';
+export { default as RequestPriceButton } from './components/RequestPriceButton.vue';
+export type { RequestPriceButtonProps } from './components/RequestPriceButton.vue';
 export { default as QuickOrder } from './components/QuickOrder.vue';
 export type { QuickOrderUploadLine, QuickOrderProps } from './components/QuickOrder.vue';
 export { default as OrderShipments } from './components/OrderShipments.vue';

@@ -224,6 +224,13 @@ function selectMatch(key: string, match: QuickOrderMatch) {
     patchRow(key, { code: '', matches: [], productId: null, name: '', netPrice: 0, grossPrice: 0, searched: false });
     return;
   }
+  // Quoted prices are excluded from quick order — the row has nowhere to show a
+  // price and the line would submit at 0.
+  if (match.priceOnRequest) {
+    notice.value = getLabel('priceOnRequest', 'Price on request — order this product from its page');
+    patchRow(key, { code: '', matches: [], productId: null, name: '', netPrice: 0, grossPrice: 0, searched: false });
+    return;
+  }
   patchRow(key, {
     code: match.sku,
     productId: match.productId,
@@ -285,6 +292,12 @@ async function onFileChosen(e: Event) {
         continue;
       }
       if (resolved.some((r) => r.productId === exact.productId)) continue;
+      // A quoted price cannot be bulk-ordered; report it like a miss rather
+      // than adding a line priced at 0.
+      if (exact.priceOnRequest) {
+        notFound.push(line.code);
+        continue;
+      }
       resolved.push({
         ...blankRow(),
         code: exact.sku,

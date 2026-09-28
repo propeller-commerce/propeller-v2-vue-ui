@@ -71,6 +71,11 @@
                   name="price"
                   :result="result"
                 />
+                <template v-else-if="showPrice !== false && result.priceOnRequest">
+                  <div class="propeller-search-bar__result-price text-sm text-foreground flex-shrink-0 text-right">
+                    {{ priceOnRequestLabel() }}
+                  </div>
+                </template>
                 <template v-else-if="showPrice !== false && result.price !== undefined && result.price !== null">
                   <div class="propeller-search-bar__result-price text-sm font-semibold text-foreground flex-shrink-0 text-right">
                     <span class="propeller-search-bar__result-price-value">{{ formatItemPrice(leadingPrice(result)) }}</span>
@@ -125,6 +130,7 @@ import { useProductSearch } from '../composables/vue/useProductSearch';
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 // No host-config import: result URLs are built from the `configuration`
 // prop's url builders when supplied, else a plain /product|/cluster path.
@@ -151,6 +157,8 @@ export interface SearchBarResult {
   url?: string;
   /** Whether this is a cluster (vs product) */
   isCluster?: boolean;
+  /** Price is quoted on request — the row shows a label instead of an amount. */
+  priceOnRequest?: boolean;
 }
 export interface SearchBarProps {
   /** Propeller SDK GraphQL client. Resolved from PropellerProvider when omitted. */
@@ -411,6 +419,9 @@ function leadingPrice(result: SearchBarResult): number {
     ? result.priceNet ?? result.price ?? 0
     : result.priceGross ?? result.price ?? 0;
 }
+function priceOnRequestLabel(): string {
+  return _getLabel(props.priceLabels, 'priceOnRequest', 'Price on request');
+}
 function priceTaxLabel(): string {
   return useTax.value
     ? _getLabel(props.priceLabels, 'inclTax', 'incl. VAT')
@@ -457,6 +468,7 @@ function mapProductToResult(
     imageUrl: displayItem?.media?.images?.items?.[0]?.imageVariants?.[0]?.url || '',
     url: url,
     isCluster: isCluster,
+    priceOnRequest: isPriceOnRequest(item),
   } as SearchBarResult;
 }
 function handleInputChange(value: string): ReturnType<SearchBarState['handleInputChange']> {

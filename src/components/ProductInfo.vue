@@ -145,6 +145,18 @@
           :labels="labels"
           :on-login-click="onLoginClick"
         />
+        <!-- Orderable first, then the display mode: a non-orderable product
+             gets neither control, and a quoted price replaces add-to-cart
+             rather than joining it. -->
+        <template v-else-if="resolvedProduct && notOrderable" />
+        <RequestPriceButton
+          v-else-if="resolvedProduct && priceOnRequest"
+          :labels="labels"
+          :is-authenticated="isAuthenticated"
+          :on-login-click="onLoginClick"
+          :added="priceRequestAdded"
+          :on-request-price="onRequestPrice ? () => onRequestPrice!(resolvedProduct!) : undefined"
+        />
         <slot
           v-else-if="showAddToCart !== false && resolvedProduct"
           name="addToCart"
@@ -237,6 +249,7 @@ import {
   LocalizedString,
   Contact,
   Customer,
+  YesNo,
 } from "@propeller-commerce/propeller-sdk-v2";
 import { useProductInfo } from "../composables/vue/useProductInfo";
 import {
@@ -249,6 +262,8 @@ import {
 } from '../context/ProductGridContext';
 import { isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import LoginToOrderButton from './LoginToOrderButton.vue';
+import RequestPriceButton from './RequestPriceButton.vue';
+import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
 import DefaultProductPrice from './ProductPrice.vue';
 import DefaultItemStock from './ItemStock.vue';
 import DefaultAddToCart from './AddToCart.vue';
@@ -372,6 +387,12 @@ export interface ProductInfoProps {
   showPrice?: boolean;
   showStock?: boolean;
   showAddToCart?: boolean;
+
+  /** Adds a quoted-price product to the price-request list. */
+  onRequestPrice?: (product: Product) => void;
+
+  /** True once this product is on the price-request list. */
+  priceRequestAdded?: boolean;
 
   /**
    * Portal access mode. In `'semi-closed'` price, stock and add-to-cart are
@@ -540,6 +561,9 @@ const FavoriteImpl = computed(() => props.favoriteComponent ?? DefaultAddToFavor
 const PriceImpl = computed(() => props.priceComponent ?? DefaultProductPrice);
 const StockImpl = computed(() => props.stockComponent ?? DefaultItemStock);
 const AddToCartImpl = computed(() => props.addToCartComponent ?? DefaultAddToCart);
+
+const priceOnRequest = computed<boolean>(() => isPriceOnRequest(resolvedProduct.value));
+const notOrderable = computed<boolean>(() => resolvedProduct.value?.orderable === YesNo.N);
 const BundlesImpl = computed(() => props.bundlesComponent ?? DefaultProductBundles);
 const BulkPricesImpl = computed(() => props.bulkPricesComponent ?? DefaultProductBulkPrices);
 const SurchargesImpl = computed(() => props.surchargesComponent ?? DefaultProductSurcharges);

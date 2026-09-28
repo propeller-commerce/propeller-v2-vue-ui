@@ -285,7 +285,7 @@
         </slot>
 
         <slot
-          v-if="showPrice !== false && !!product?.price"
+          v-if="showPrice !== false && (!!product?.price || priceOnRequest)"
           name="price"
           :product="product"
           :price="product.price"
@@ -305,6 +305,7 @@
               :labels="props.priceLabels"
             />
             <ProductPriceDisplay
+              :price-on-request="priceOnRequest"
               v-else
               :price="product.price"
               :includeTax="
@@ -501,7 +502,7 @@
         </slot>
 
         <div
-          v-if="showPrice !== false && !!product?.price"
+          v-if="showPrice !== false && (!!product?.price || priceOnRequest)"
           class="mt-auto hidden md:block"
         >
           <slot
@@ -524,6 +525,7 @@
                 :labels="props.priceLabels"
               />
               <ProductPriceDisplay
+                :price-on-request="priceOnRequest"
                 v-else
                 :price="product.price"
                 :includeTax="
@@ -541,7 +543,7 @@
       </div>
 
       <div
-        v-if="(showStock && !!props.product.inventory) || (showPrice !== false && !!product?.price)"
+        v-if="(showStock && !!props.product.inventory) || (showPrice !== false && (!!product?.price || priceOnRequest))"
         class="propeller-product-card__footer-meta flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 pt-1 sm:px-4 md:hidden"
       >
         <slot
@@ -570,7 +572,7 @@
         </slot>
 
         <slot
-          v-if="showPrice !== false && !!product?.price"
+          v-if="showPrice !== false && (!!product?.price || priceOnRequest)"
           name="price"
           :product="product"
           :price="product.price"
@@ -588,6 +590,7 @@
               :labels="props.priceLabels"
             />
             <ProductPriceDisplay
+              :price-on-request="priceOnRequest"
               v-else
               :price="product.price"
               :includeTax="resolvedIncludeTax"
@@ -691,6 +694,7 @@ import { getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
 import { isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import LoginToOrderButton from './LoginToOrderButton.vue';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
 import { useResolvedProps, type ResolveSpec } from '../composables/vue/useResolvedProps';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import DefaultProductPrice from './ProductPrice.vue';
@@ -1033,6 +1037,8 @@ const infra = useInfraProps(props);
 const resolvedIncludeTax = computed<boolean>(() =>
   props.includeTax === true ? true : !!infra.includeTax,
 );
+
+const priceOnRequest = computed<boolean>(() => isPriceOnRequest(props.product));
 
 // Read through `infra` so call sites need not thread portalMode/user.
 const contentHidden = computed<boolean>(() =>

@@ -99,6 +99,7 @@ describe('all other Vue composables — SSR-safe (import only)', () => {
     () => import('../useCompany'),
     () => import('../useFavorites'),
     () => import('../useInfraProps'),
+    () => import('../usePriceRequest'),
     () => import('../useProductBundles'),
     () => import('../useProductInfo'),
     () => import('../useProductSearch'),

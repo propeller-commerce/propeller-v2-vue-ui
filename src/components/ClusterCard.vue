@@ -544,6 +544,7 @@ import {
 } from '@propeller-commerce/propeller-v2-core-ui';
 import { getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
 import { useResolvedProps, type ResolveSpec } from '../composables/vue/useResolvedProps';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import DefaultProductPrice from './ProductPrice.vue';
@@ -818,6 +819,8 @@ function getStockStatusClass(): ReturnType<
 }
 function getClusterPrice(): ReturnType<ClusterCardState["getClusterPrice"]> {
   if (!props.showPrice) return "";
+  // A cluster follows its default product: that is the price the card shows.
+  if (isPriceOnRequest(props.cluster)) return getLabel("priceOnRequest", "Price on request");
   const priceObj = (props.cluster as Cluster)?.defaultProduct?.price;
   const useTax: boolean = resolvedIncludeTax.value;
   const value: number | undefined = useTax ? priceObj?.net : priceObj?.gross;

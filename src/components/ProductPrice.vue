@@ -11,7 +11,13 @@
       </p>
     </template>
 
-    <template v-if="!isHidden() && !!getLeadingPrice()">
+    <template v-if="!isHidden() && props.priceOnRequest">
+      <p class="propeller-product-price__on-request text-sm text-foreground">
+        {{ getLabel("priceOnRequest", "Price on request") }}
+      </p>
+    </template>
+
+    <template v-if="!isHidden() && !props.priceOnRequest && !!getLeadingPrice()">
       <div class="propeller-product-price__content flex flex-col gap-0.5">
         <div class="propeller-product-price__primary flex items-baseline gap-2">
           <span
@@ -59,7 +65,8 @@ export interface ProductPriceProps {
    * ProductPrice object from the product.
    * Obtain from `product.price`.
    */
-  price: ProductPrice;
+  /** Omitted only when `priceOnRequest` renders in its place. */
+  price?: ProductPrice;
 
   /** Currency symbol to display. Defaults to '€'. */
   currency?: string;
@@ -92,8 +99,15 @@ export interface ProductPriceProps {
   selectedOptionProducts?: Product[];
 
   /**
+   * Render the price-on-request label instead of an amount.
+   * Derive with `isPriceOnRequest(product)` — `price.gross`/`net` are still
+   * populated (usually 0) for these products.
+   */
+  priceOnRequest?: boolean;
+
+  /**
    * Override any UI string.
-   * Available keys: inclTax, exclTax, loginToSeePrices
+   * Available keys: inclTax, exclTax, loginToSeePrices, priceOnRequest
    */
   labels?: Record<string, string>;
 
