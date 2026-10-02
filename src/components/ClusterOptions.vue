@@ -70,8 +70,8 @@
                 class="propeller-cluster-options__preview mt-3 flex items-center gap-3 rounded-[var(--radius-container)] border border-border-subtle bg-surface-hover p-3"
               >
                 <template v-if="!!option.previewImageUrl">
-                  <img
-                    class="propeller-cluster-options__preview-image h-12 w-12 flex-shrink-0 rounded border border-border-subtle bg-card object-contain"
+                  <PropellerImg
+                    :className="'propeller-cluster-options__preview-image h-12 w-12 flex-shrink-0 rounded border border-border-subtle bg-card object-contain'"
                     :src="option.previewImageUrl"
                     :alt="option.previewName"
                   />
@@ -81,11 +81,11 @@
                   <div
                     class="propeller-cluster-options__preview-image-placeholder flex h-12 w-12 flex-shrink-0 items-center justify-center rounded border border-border bg-surface-hover"
                   >
-                    <svg
+                    <svg aria-hidden="true"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      class="h-5 w-5 text-foreground-subtle"
+                      class="h-6 w-6 text-foreground-subtle"
                     >
                       <path
                         strokeLinecap="round"
@@ -127,6 +127,7 @@ import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { getProductImageUrl as _getProductImageUrl } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
+import PropellerImg from './PropellerImg.vue';
 
 /**
  * Flattened render model for one product inside an option dropdown.

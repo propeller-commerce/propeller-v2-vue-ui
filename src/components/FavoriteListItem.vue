@@ -25,8 +25,8 @@
             @click="async (e) => handleItemClick(e)"
           >
             <template v-if="!!getImageUrl()">
-              <img
-                class="propeller-favorite-list-item__image h-full w-full object-contain"
+              <PropellerImg
+                :className="'propeller-favorite-list-item__image h-full w-full object-contain'"
                 :src="getImageUrl()"
                 :alt="getName()"
               />
@@ -36,11 +36,11 @@
               <div
                 class="propeller-favorite-list-item__image-placeholder flex h-full w-full items-center justify-center text-foreground-subtle"
               >
-                <svg
+                <svg aria-hidden="true"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  class="h-8 w-8"
+                  class="h-10 w-10"
                 >
                   <path
                     strokeLinecap="round"
@@ -57,8 +57,8 @@
         <template v-if="titleLinkable === false">
           <div class="block h-full w-full">
             <template v-if="!!getImageUrl()">
-              <img
-                class="propeller-favorite-list-item__image h-full w-full object-contain"
+              <PropellerImg
+                :className="'propeller-favorite-list-item__image h-full w-full object-contain'"
                 :src="getImageUrl()"
                 :alt="getName()"
               />
@@ -68,11 +68,11 @@
               <div
                 class="propeller-favorite-list-item__image-placeholder flex h-full w-full items-center justify-center text-foreground-subtle"
               >
-                <svg
+                <svg aria-hidden="true"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  class="h-8 w-8"
+                  class="h-10 w-10"
                 >
                   <path
                     strokeLinecap="round"
@@ -308,6 +308,7 @@ import {
 } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
+import PropellerImg from './PropellerImg.vue';
 
 export interface FavoriteListItemProps {
   /** Product or Cluster to be listed as a favorite list item */

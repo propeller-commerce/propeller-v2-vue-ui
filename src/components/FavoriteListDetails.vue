@@ -304,11 +304,11 @@
                     @click="handleAddItemFromSearch(item)"
                   >
                     <div class="propeller-favorite-list-details__search-item-media h-14 w-14 flex-shrink-0 rounded-[var(--radius-control)] bg-surface-hover overflow-hidden flex items-center justify-center">
-                      <img
+                      <PropellerImg
                         v-if="getSearchItemImage(item)"
                         :src="getSearchItemImage(item)"
                         :alt="getSearchItemName(item)"
-                        class="h-full w-full object-contain"
+                        :className="'h-full w-full object-contain'"
                       />
                       <svg
                         v-else
@@ -395,6 +395,7 @@ import { useProductSearch } from "../composables/vue/useProductSearch";
 import { useCart } from "../composables/vue/useCart";
 import { useInfraProps } from "../composables/vue/useInfraProps";
 import { createServices } from '@propeller-commerce/propeller-v2-core-ui';
+import PropellerImg from './PropellerImg.vue';
 
 export interface FavoriteListDetailsProps {
   /** GraphQL client for the Propeller SDK. Resolved from PropellerProvider when omitted. */

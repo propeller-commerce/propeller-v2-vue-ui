@@ -49,8 +49,8 @@
               >
                 <template v-if="result.imageUrl || noImageUrl">
                   <div class="propeller-search-bar__result-media relative w-16 h-16 flex-shrink-0">
-                    <img
-                      class="propeller-search-bar__result-image w-full h-full object-contain"
+                    <PropellerImg
+                      :className="'propeller-search-bar__result-image w-full h-full object-contain'"
                       :src="result.imageUrl || noImageUrl"
                       :alt="result.name"
                     />
@@ -132,6 +132,7 @@ import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
 import { useInfraProps } from '../composables/vue/useInfraProps';
+import PropellerImg from './PropellerImg.vue';
 // No host-config import: result URLs are built from the `configuration`
 // prop's url builders when supplied, else a plain /product|/cluster path.
 

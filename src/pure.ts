@@ -28,6 +28,7 @@ export { default as CategoryShortDescription } from './components/CategoryShortD
 export { default as GridTitle } from './components/GridTitle.vue';
 export { default as ItemStock } from './components/ItemStock.vue';
 export { default as MachineCard } from './components/MachineCard.vue';
+export { default as PropellerImg } from './components/PropellerImg.vue';
 export { default as OrderItemCard } from './components/OrderItemCard.vue';
 export { default as OrderSummary } from './components/OrderSummary.vue';
 export { default as OrderTotals } from './components/OrderTotals.vue';

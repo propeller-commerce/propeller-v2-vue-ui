@@ -29,6 +29,7 @@ export {
   PropellerDepsKey,
   usePropellerDeps,
   tryUsePropellerDeps,
+  useImgComponent,
   type PropellerDeps,
   type PropellerVuePluginOptions,
 } from './plugin';
@@ -243,6 +244,7 @@ export type { MachineGridProps, MachineListingState } from './components/Machine
 export { default as Menu } from './components/Menu.vue';
 export { default as OrderActions } from './components/OrderActions.vue';
 export { default as OrderBonusItems } from './components/OrderBonusItems.vue';
+export { default as PropellerImg } from './components/PropellerImg.vue';
 export { default as OrderItemCard } from './components/OrderItemCard.vue';
 export { default as OrderList } from './components/OrderList.vue';
 export { default as PriceRequestList } from './components/PriceRequestList.vue';

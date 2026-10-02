@@ -24,11 +24,11 @@
       </template>
 
       <template v-if="getImages().length > 0">
-        <img
+        <PropellerImg
           :alt='getLabel("productImageAlt", "Product image")'
           :src="getMainImage()"
           @click="async (event) => openLightbox()"
-          :class="`h-full w-full object-contain p-8 transition-transform duration-200 ${
+          :className="`h-full w-full object-contain p-8 transition-transform duration-200 ${
             enableZoom !== false ? 'cursor-zoom-in hover:scale-105' : ''
           }`"
         />
@@ -46,8 +46,8 @@
                 : 'border-transparent hover:border-border'
             }`"
           >
-            <img
-              class="w-full h-full object-contain p-1"
+            <PropellerImg
+              :className="'w-full h-full object-contain p-1'"
               :src="img"
               :alt='`${getLabel("productImageAlt", "Product image")} ${index + 1}`'
             />
@@ -114,9 +114,9 @@
           </button>
         </template>
 
-        <img
+        <PropellerImg
           :alt='getLabel("productImageFullscreenAlt", "Product image fullscreen")'
-          class="max-h-full max-w-full object-contain rounded-[var(--radius-container)]"
+          :className="'max-h-full max-w-full object-contain rounded-[var(--radius-container)]'"
           :src="getMainImage()"
           @click="async (e) => e.stopPropagation()"
         />
@@ -155,6 +155,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { getLabel as _getLabel } from "@propeller-commerce/propeller-v2-core-ui";
+import PropellerImg from './PropellerImg.vue';
 
 export interface ProductGalleryProps {
   /**

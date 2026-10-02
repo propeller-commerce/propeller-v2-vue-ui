@@ -46,8 +46,8 @@
             @click="async (e) => handleClusterClick(e)"
           >
             <template v-if="!!getClusterImageUrl()">
-              <img
-                class="propeller-cluster-card__image h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              <PropellerImg
+                :className="'propeller-cluster-card__image h-full w-full object-contain transition-transform duration-300 group-hover:scale-105'"
                 :src="getClusterImageUrl()"
                 :alt="getClusterName()"
               />
@@ -57,7 +57,7 @@
               <div
                 class="propeller-cluster-card__image-placeholder flex h-full w-full items-center justify-center text-foreground-subtle"
               >
-                <svg
+                <svg aria-hidden="true"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -552,6 +552,7 @@ import DefaultItemStock from './ItemStock.vue';
 import DefaultAddToFavorite from './AddToFavorite.vue';
 import DefaultProductImage from './defaults/DefaultProductImage.vue';
 import DefaultProductBadges from './defaults/DefaultProductBadges.vue';
+import PropellerImg from './PropellerImg.vue';
 
 export interface ClusterCardProps {
   // === Core ===

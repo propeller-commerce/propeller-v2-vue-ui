@@ -174,8 +174,8 @@
                         : 'border-border hover:border-secondary/30'
                     }`"
                   >
-                    <img
-                      class="propeller-cluster-configurator__image w-full h-full object-cover"
+                    <PropellerImg
+                      :className="'propeller-cluster-configurator__image w-full h-full object-cover'"
                       :src="val"
                       :alt="val"
                     />
@@ -249,6 +249,7 @@
 import { onMounted, ref } from "vue";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { AttributeResult, AttributeType, ClusterConfig, ClusterConfigSetting, Product } from "@propeller-commerce/propeller-sdk-v2";
+import PropellerImg from './PropellerImg.vue';
 
 
 /**

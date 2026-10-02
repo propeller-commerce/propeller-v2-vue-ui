@@ -13,8 +13,8 @@
               <div
                 class="propeller-order-item-card__media relative w-16 h-16 flex-shrink-0 rounded overflow-hidden"
               >
-                <img
-                  class="propeller-order-item-card__image object-cover w-full h-full"
+                <PropellerImg
+                  :className="'propeller-order-item-card__image object-cover w-full h-full'"
                   :src="productImage"
                   :alt="productName"
                 />
@@ -194,6 +194,7 @@ import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import DefaultProductPrice from './ProductPrice.vue';
 import DefaultItemStock from './ItemStock.vue';
+import PropellerImg from './PropellerImg.vue';
 
 export interface OrderItemCardProps {
   /**

@@ -17,6 +17,7 @@ import { formatPrice as _formatPrice, getLabel as _getLabel } from '@propeller-c
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import { useQuickOrder, type QuickOrderMatch } from '../composables/vue/useQuickOrder';
+import PropellerImg from './PropellerImg.vue';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -422,7 +423,7 @@ async function handleSubmit() {
                       class="flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-muted text-sm"
                       @click="selectMatch(r.key, m)"
                     >
-                      <img v-if="m.imageUrl" :src="m.imageUrl" alt="" width="32" height="32" class="rounded object-cover" />
+                      <PropellerImg v-if="m.imageUrl" :src="m.imageUrl" alt="" :width="32" :height="32" :className="'rounded object-cover'" />
                       <span class="flex-1">
                         <span class="block text-foreground">{{ m.name }}</span>
                         <span v-if="m.sku" class="block text-xs text-muted-foreground">SKU: {{ m.sku }}</span>

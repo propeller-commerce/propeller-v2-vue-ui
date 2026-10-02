@@ -17,25 +17,25 @@
               class="propeller-items-overview__item-media w-16 h-16 flex-shrink-0 bg-surface-hover rounded-[var(--radius-control)] overflow-hidden border border-border-subtle flex items-center justify-center"
             >
               <template v-if="getItemImageUrl(item)">
-                <img
-                  class="propeller-items-overview__item-image w-full h-full object-contain p-1.5"
+                <PropellerImg
+                  :className="'propeller-items-overview__item-image w-full h-full object-contain p-1.5'"
                   :src="getItemImageUrl(item)"
                   :alt="getItemName(item)"
                 />
               </template>
 
               <template v-if="!getItemImageUrl(item)">
-                <svg
+                <svg aria-hidden="true"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth="1.5"
-                  class="propeller-items-overview__item-image-placeholder w-6 h-6 text-foreground-subtle"
+                  class="propeller-items-overview__item-image-placeholder w-8 h-8 text-foreground-subtle"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                   ></path>
                 </svg>
               </template>
@@ -215,6 +215,7 @@ import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/pr
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice, formatSurcharge as _formatSurcharge } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
+import PropellerImg from './PropellerImg.vue';
 
 export interface ItemsOverviewProps {
   /** Shopping cart object from which the cart items overview will be displayed */

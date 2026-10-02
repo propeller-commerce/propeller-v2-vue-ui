@@ -15,12 +15,12 @@
         v-if="showImage"
         class="propeller-machine-card__image aspect-square w-full overflow-hidden bg-surface-hover"
       >
-        <img
+        <PropellerImg
           v-if="imageUrl"
           :src="imageUrl"
           :alt="name"
           loading="lazy"
-          class="h-full w-full object-contain object-top"
+          :className="'h-full w-full object-contain object-top'"
         />
         <!-- Decorative placeholder: the name below already labels the card. -->
         <div
@@ -28,7 +28,7 @@
           aria-hidden="true"
           class="propeller-machine-card__image-placeholder flex h-full w-full items-center justify-center text-foreground-subtle"
         >
-          <svg
+          <svg aria-hidden="true"
             class="h-12 w-12"
             fill="none"
             stroke="currentColor"
@@ -86,6 +86,7 @@
 import { computed } from 'vue';
 import type { SparePartsMachine } from '@propeller-commerce/propeller-sdk-v2';
 import { getLabel, getLocalizedValue } from '@propeller-commerce/propeller-v2-core-ui';
+import PropellerImg from './PropellerImg.vue';
 
 export interface MachineCardProps {
   /** The machine (spare-parts tree node) to display. */

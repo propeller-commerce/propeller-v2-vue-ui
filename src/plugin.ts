@@ -1,7 +1,8 @@
 import type { App, InjectionKey } from 'vue';
 import { inject } from 'vue';
 import type { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
-import type { Services } from '@propeller-commerce/propeller-v2-core-ui';
+import type { ImgComponentProps, Services } from '@propeller-commerce/propeller-v2-core-ui';
+import type { Component } from 'vue';
 
 /**
  * Tier 1 — application-wide infrastructure. Installed once at app startup via
@@ -32,6 +33,8 @@ export interface PropellerDeps {
    * so consumers can stuff extra config in without changing this interface.
    */
   configuration: unknown;
+  /** Replaces the `<img>` every component renders. Excludes PSP logos. */
+  imgComponent?: Component<ImgComponentProps>;
 }
 
 /** Symbol-keyed so it never collides with a consumer's own provide/inject. */
@@ -73,6 +76,7 @@ export const propellerVue = {
       services: options.services,
       currency: options.currency ?? '€',
       configuration: options.configuration,
+      imgComponent: options.imgComponent,
     });
   },
 };
@@ -95,4 +99,9 @@ export function usePropellerDeps(): PropellerDeps {
 /** Non-throwing variant — useful for standalone / story rendering. */
 export function tryUsePropellerDeps(): PropellerDeps | null {
   return inject(PropellerDepsKey, null);
+}
+
+/** The host's injected image component; `undefined` outside the plugin. */
+export function useImgComponent(): Component<ImgComponentProps> | undefined {
+  return inject(PropellerDepsKey, null)?.imgComponent;
 }

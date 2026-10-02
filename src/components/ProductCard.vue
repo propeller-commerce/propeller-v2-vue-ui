@@ -45,8 +45,8 @@
             @click="handleNavigate()"
           >
             <template v-if="!!getProductImageUrl()">
-              <img
-                class="propeller-product-card__image h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              <PropellerImg
+                :className="'propeller-product-card__image h-full w-full object-contain transition-transform duration-300 group-hover:scale-105'"
                 :src="getProductImageUrl()"
                 :alt="getProductName()"
               />
@@ -56,7 +56,7 @@
               <div
                 class="propeller-product-card__image-placeholder flex h-full w-full items-center justify-center text-foreground-subtle"
               >
-                <svg
+                <svg aria-hidden="true"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -727,6 +727,7 @@ import DefaultAddToCart from './AddToCart.vue';
 import DefaultAddToFavorite from './AddToFavorite.vue';
 import DefaultProductImage from './defaults/DefaultProductImage.vue';
 import DefaultProductBadges from './defaults/DefaultProductBadges.vue';
+import PropellerImg from './PropellerImg.vue';
 
 export interface ProductCardProps {
   // === Core ===
