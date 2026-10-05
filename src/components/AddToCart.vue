@@ -372,7 +372,7 @@ import { useCart } from "../composables/vue/useCart";
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import CartBonusItems from './CartBonusItems.vue';
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
-import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage, resolveOrderableQuantity } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getProductImageUrl as _getProductImageUrl,
   getProductSku as _getProductSku,
@@ -641,12 +641,8 @@ onMounted(() => {
   quantity.value = getMinQuantity(props.product);
 });
 
-/** Round to the nearest valid quantity: at least `min`, on the `min + n*step` grid. */
 function snapQuantity(value: number): number {
-  const min = getMinQuantity(props.product);
-  const step = getStep(props.product) || 1;
-  if (!Number.isFinite(value) || value <= min) return min;
-  return Math.round((value - min) / step) * step + min;
+  return resolveOrderableQuantity(value, getMinQuantity(props.product), getStep(props.product));
 }
 function increment(): ReturnType<AddToCartState["increment"]> {
   quantityDraft.value = null;

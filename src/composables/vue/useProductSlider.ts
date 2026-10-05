@@ -5,8 +5,8 @@
  *
  * Responsibilities:
  * - fetchCrossupsells: CrossupsellService with priceCalculateProductInput + extract productTo/clusterTo
- * - fetchProducts: ProductService.getProducts() batch call (NOT per-item getProduct())
- *   with statuses filter and filterAvailableAttributeInput
+ * - fetchProducts: one `category.products` batch call over `baseCategoryId`
+ *   (the flat `products` resolver ignores orderlist scoping), priced per user
  * - Scroll position tracking for responsive sliding
  */
 
@@ -20,8 +20,8 @@ import type {
   Customer,
   Crossupsell,
   CrossupsellsQueryVariables,
-  ProductsQueryVariables,
-  ProductSearchInput,
+  CategoryQueryVariables,
+  CategoryProductSearchInput,
   PriceCalculateProductInput,
   FilterAvailableAttributeInput,
   MediaImageProductSearchInput,
@@ -47,6 +47,8 @@ export interface UseProductSliderOptions {
   configuration?: {
     /** The channel's anonymous user — logged-out listings are scoped to it. */
     anonymousUserId?: number;
+    /** Catalog root. Required for orderlist-scoped fetching — see the remarks. */
+    baseCategoryId?: number;
     imageSearchFiltersGrid?: MediaImageProductSearchInput;
     imageVariantFiltersMedium?: TransformationsInput;
   };
@@ -124,29 +126,36 @@ export function useProductSlider(options: UseProductSliderOptions): UseProductSl
     if (!productIds.length && !clusterIds.length) return items;
 
     const lang = languageRef.value || 'NL';
+    // Orderlist scoping only happens on the `category.products` resolver, so
+    // verifying through the flat one let out-of-assortment crossupsells pass.
+    const catId = configuration.baseCategoryId;
+    if (!catId) return items;
     const userId = resolveUserId();
     const companyId = resolveCompanyId();
-    const searchInput: ProductSearchInput = {
+    const categoryProductSearchInput = {
       ...(productIds.length && { productIds }),
       ...(clusterIds.length && { clusterIds }),
       language: lang,
       page: 1,
       offset: 50,
       statuses: [ProductStatus.A, ProductStatus.P, ProductStatus.T, ProductStatus.S],
+      hidden: false,
       ...(userId !== undefined && { userId }),
       ...(companyId !== undefined && { companyId }),
-    };
+    } as CategoryProductSearchInput;
     const filterAvailableAttributeInput: FilterAvailableAttributeInput = { isSearchable: true };
-    const variables: ProductsQueryVariables = {
-      input: searchInput,
+    const variables: CategoryQueryVariables = {
+      categoryId: catId,
+      language: lang,
+      categoryProductSearchInput,
+      filterAvailableAttributeInput,
       imageSearchFilters: configuration.imageSearchFiltersGrid,
       imageVariantFilters: configuration.imageVariantFiltersMedium as TransformationsInput,
-      filterAvailableAttributeInput,
     };
 
     try {
-      const response = await createServices(graphqlClient).product.getProducts(variables);
-      const resolved = (response?.items ?? []) as (Product | Cluster)[];
+      const response = await createServices(graphqlClient).category.getCategory(variables);
+      const resolved = ((response?.products as { items?: unknown[] } | undefined)?.items ?? []) as (Product | Cluster)[];
       const allowed = new Set<number>();
       for (const r of resolved) {
         const id = (r as Product).productId ?? (r as Cluster).clusterId;
@@ -224,12 +233,22 @@ export function useProductSlider(options: UseProductSliderOptions): UseProductSl
     loading.value = true;
     error.value = null;
     try {
-      const service = createServices(graphqlClient).product;
       const lang = languageRef.value || 'NL';
+      // Route through `category.products`, not the flat `products` resolver:
+      // only the category path applies orderlist scoping, so the flat one
+      // returned products outside the company's assortment, unpriced.
+      const catId = configuration.baseCategoryId;
+      if (!catId) {
+        products.value = [];
+        return;
+      }
+      const service = createServices(graphqlClient).category;
+      const userId = resolveUserId();
+      const companyId = resolveCompanyId();
 
-      const searchInput: ProductSearchInput = {
-        productIds,
-        clusterIds,
+      const categoryProductSearchInput = {
+        ...(productIds.length && { productIds }),
+        ...(clusterIds.length && { clusterIds }),
         language: lang,
         page: 1,
         offset: 50,
@@ -239,19 +258,26 @@ export function useProductSlider(options: UseProductSliderOptions): UseProductSl
           ProductStatus.T,
           ProductStatus.S,
         ],
-      };
+        hidden: false,
+        ...(userId !== undefined && { userId }),
+        ...(companyId !== undefined && { companyId }),
+      } as CategoryProductSearchInput;
 
       const filterAvailableAttributeInput: FilterAvailableAttributeInput = { isSearchable: true };
 
-      const variables: ProductsQueryVariables = {
-        input: searchInput,
+      const variables: CategoryQueryVariables = {
+        categoryId: catId,
+        language: lang,
+        categoryProductSearchInput,
+        priceCalculateProductInput: buildPriceInput(),
+        filterAvailableAttributeInput,
         imageSearchFilters: configuration.imageSearchFiltersGrid,
         imageVariantFilters: configuration.imageVariantFiltersMedium as TransformationsInput,
-        filterAvailableAttributeInput,
       };
 
-      const response = await service.getProducts(variables);
-      products.value = (response?.items ?? []) as (Product | Cluster)[];
+      const response = await service.getCategory(variables);
+      const productsResponse = response?.products as { items?: unknown[] } | undefined;
+      products.value = (productsResponse?.items ?? []) as (Product | Cluster)[];
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : 'Failed to fetch products';
       products.value = [];

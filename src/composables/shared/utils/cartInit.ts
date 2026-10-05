@@ -22,6 +22,25 @@ import type {
 } from '@propeller-commerce/propeller-sdk-v2';
 import { isContact, isCustomer, getAddresses, type AnyUser } from '@propeller-commerce/propeller-v2-core-ui';
 
+/** The API's code for "the cart this id names does not exist". */
+const CART_NOT_FOUND = 'CART_NOT_FOUND_ERROR';
+
+/**
+ * Is this the API saying the cart is gone? A remembered cart id outlives the
+ * cart when it is ordered in another browser or deleted, so every later
+ * mutation on it fails with this.
+ */
+export function isCartNotFound(error: unknown): boolean {
+  const entries = (error as { errors?: Array<{ extensions?: { code?: string }; message?: string }> })
+    ?.errors;
+  if (!Array.isArray(entries)) return false;
+  return entries.some(
+    (e) =>
+      e?.extensions?.code === CART_NOT_FOUND ||
+      /cart:?\s*\S+\s+not found/i.test(e?.message ?? '')
+  );
+}
+
 export interface CartInitConfig {
   graphqlClient: GraphQLClient;
   user: AnyUser;

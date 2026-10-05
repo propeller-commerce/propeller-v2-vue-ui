@@ -23,7 +23,7 @@ import type {
   CrossupsellSearchInput,
   CartProcessResponse,
 } from '@propeller-commerce/propeller-sdk-v2';
-import { initCart, type CartInitConfig } from '../shared/utils/cartInit';
+import { initCart, isCartNotFound, type CartInitConfig } from '../shared/utils/cartInit';
 import {
   isContact,
   isCustomer,
@@ -216,17 +216,29 @@ export function useCart(options: UseCartOptions): UseCartReturn {
 
       const service = createServices(graphqlClient).cart;
       const language = languageRef.value || configuration.language || 'NL';
-      const resultCart = await service.addItemToCart({
-        id: resolvedCartId,
-        input: {
-          productId: opts.product.productId, quantity: opts.quantity,
-          ...(opts.cluster?.clusterId !== undefined && { clusterId: opts.cluster.clusterId }),
-          ...(childItemInputs && { childItems: childItemInputs }),
-          ...(opts.notes && { notes: opts.notes }),
-          ...(opts.price !== undefined && { price: opts.price }),
-        },
+      const input = {
+        productId: opts.product.productId, quantity: opts.quantity,
+        ...(opts.cluster?.clusterId !== undefined && { clusterId: opts.cluster.clusterId }),
+        ...(childItemInputs && { childItems: childItemInputs }),
+        ...(opts.notes && { notes: opts.notes }),
+        ...(opts.price !== undefined && { price: opts.price }),
+      };
+      const addArgs = {
         language, imageSearchFilters: configuration.imageSearchFiltersGrid, imageVariantFilters: configuration.imageVariantFiltersSmall,
-      });
+      };
+      let resultCart: Cart;
+      try {
+        resultCart = await service.addItemToCart({ id: resolvedCartId, input, ...addArgs });
+      } catch (e: unknown) {
+        // The remembered cart can be ordered or deleted elsewhere, and the id
+        // outlives it in the host's storage. Forget it and start a fresh cart,
+        // once — `initCart` only ever returns an OPEN cart, so it cannot hand
+        // the dead id back and the retry terminates.
+        if (!isCartNotFound(e) || !opts.createCart) throw e;
+        cart.value = null; createdCartId.value = '';
+        const fresh = await resolveCart();
+        resultCart = await service.addItemToCart({ id: fresh.cartId, input, ...addArgs });
+      }
       cart.value = resultCart; createdCartId.value = resultCart.cartId;
       const addedItem = (resultCart as any).items?.find((i: any) => i.productId === opts.product.productId) ?? null;
       opts.afterAddToCart?.(resultCart, addedItem);

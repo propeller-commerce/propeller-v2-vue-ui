@@ -4,7 +4,7 @@
  * Covers: ProductInfo, ClusterInfo, ProductCard, ClusterCard components.
  *
  * Responsibilities:
- * - ProductInfo: getOrderlists → getProduct (sequential; orderlists needed for price tier)
+ * - ProductInfo: getProduct (orderlist scoping is applied by the backend)
  * - ClusterInfo: getClusterConfig → getCluster (sequential; config drives attribute names)
  * - priceCalculateProductInput + userBulkPriceProductInput for correct per-user pricing
  * - Cluster fallback chain: cluster → defaultProduct for name/sku/price/image
@@ -31,7 +31,6 @@ import type {
   AttributeResultSearchInput,
   MediaImageProductSearchInput,
   TransformationsInput,
-  OrderlistSearchInput,
 } from '@propeller-commerce/propeller-sdk-v2';
 import { createServices } from '@propeller-commerce/propeller-v2-core-ui';
 
@@ -121,7 +120,6 @@ export function useProductInfo(options: UseProductInfoOptions): UseProductInfoRe
   }
 
   // ── Fetch product ─────────────────────────────────────────────────────────
-  // getOrderlists first (if user+companyId), then getProduct.
 
   async function fetchProduct(
     productId: number,
@@ -132,29 +130,15 @@ export function useProductInfo(options: UseProductInfoOptions): UseProductInfoRe
     error.value = null;
     try {
       const lang = languageRef.value || 'NL';
-      const user = options.user?.value ?? null;
-      const companyId = options.companyId?.value;
 
-      // Step 1: resolve orderlist IDs.
-      // Explicit options.orderlistIds (e.g. a chosen contract) take precedence
-      // and skip the auto-resolution of all company orderlists. When the caller
-      // sets applyOrderlists:false, disable orderlist scoping entirely.
-      const explicitOrderlistIds = options.orderlistIds?.value;
-      let orderlistIds: number[] = [];
-      let applyOrderlists = true;
-      if (explicitOrderlistIds && explicitOrderlistIds.length > 0) {
-        orderlistIds = explicitOrderlistIds;
-        applyOrderlists = options.applyOrderlists?.value !== false;
-      } else if (options.applyOrderlists?.value === false) {
-        applyOrderlists = false;
-      } else if (user && companyId) {
-        const orderlistService = createServices(graphqlClient).orderlist;
-        const searchInput: OrderlistSearchInput = { companyIds: [companyId] };
-        const orderlists = await orderlistService.getOrderlists(searchInput);
-        orderlistIds = (orderlists?.items ?? []).map((ol) => ol.id);
-      }
+      // Orderlist (contract) scoping. Explicit ids (e.g. a chosen contract) win;
+      // otherwise leave it to the backend, which merges the company's positive
+      // and negative orderlists itself. Resolving the ids here sent every list
+      // for the company as an allowlist, so a negative list inverted the filter.
+      const orderlistIds = options.orderlistIds?.value ?? [];
+      const applyOrderlists = options.applyOrderlists?.value !== false;
 
-      // Step 2: fetch product with full inputs
+      // Fetch product with full inputs
       const service = createServices(graphqlClient).product;
       const attributeInput = buildAttributeInput();
 

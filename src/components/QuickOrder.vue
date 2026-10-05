@@ -14,7 +14,7 @@
 import { ref, computed } from 'vue';
 import type { Cart, Contact, Customer, GraphQLClient, MediaImageProductSearchInput, TransformationsInput } from '@propeller-commerce/propeller-sdk-v2';
 import { formatPrice as _formatPrice, getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
-import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage, resolveOrderableQuantity } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import { useQuickOrder, type QuickOrderMatch } from '../composables/vue/useQuickOrder';
 import PropellerImg from './PropellerImg.vue';
@@ -251,18 +251,12 @@ function selectMatch(key: string, match: QuickOrderMatch) {
   });
 }
 
-/** Round to the nearest orderable quantity: at least `min`, on the `min + n*step` grid. */
-function snapToStep(value: number, min: number, step: number): number {
-  if (!Number.isFinite(value) || value <= min) return min;
-  return Math.round((value - min) / (step || 1)) * (step || 1) + min;
-}
-
 function setQuantity(key: string, raw: string) {
   const n = parseInt(raw, 10);
   const i = rows.value.findIndex((r) => r.key === key);
   if (i === -1) return;
   const r = rows.value[i];
-  rows.value[i] = { ...r, quantity: snapToStep(n, r.minQuantity, r.step) };
+  rows.value[i] = { ...r, quantity: resolveOrderableQuantity(n, r.minQuantity, r.step) };
 }
 
 function addRow() {

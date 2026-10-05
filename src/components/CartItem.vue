@@ -434,7 +434,7 @@
             <button
               type="button"
               class="propeller-cart-item__decrement px-2.5 h-full text-muted-foreground hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-l-[var(--radius-control)] select-none"
-              @click="async (event) => handleQuantityChange(quantity - step)"
+              @click="handleQuantityDecrement"
               :disabled="quantity <= minQuantity || loading"
             >
               -</button
@@ -443,19 +443,13 @@
               class="propeller-cart-item__quantity w-10 text-center text-sm bg-transparent border-x border-input h-full focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               :min="minQuantity"
               :step="step"
-              :value="quantity"
-              @change="
-                async (e) => {
-                  const val = parseInt((e.target as HTMLInputElement).value, 10);
-                  if (!isNaN(val) && val >= minQuantity) {
-                    handleQuantityChange(Math.round((val - minQuantity) / step) * step + minQuantity);
-                  }
-                }
-              "
+              :value="quantityDraft ?? quantity"
+              @input="(e) => handleQuantityInput((e.target as HTMLInputElement).value)"
+              @blur="handleQuantityBlur"
             /><button
               type="button"
               class="propeller-cart-item__increment px-2.5 h-full text-muted-foreground hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors rounded-r-[var(--radius-control)] select-none"
-              @click="async (event) => handleQuantityChange(quantity + step)"
+              @click="handleQuantityIncrement"
               :disabled="loading"
             >
               +
@@ -469,15 +463,9 @@
             class="propeller-cart-item__quantity w-14 h-9 text-center text-sm border border-input rounded-[var(--radius-control)] focus:ring-2 focus:ring-primary focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             :min="minQuantity"
             :step="step"
-            :value="quantity"
-            @change="
-              async (e) => {
-                const val = parseInt((e.target as HTMLInputElement).value, 10);
-                if (!isNaN(val) && val >= minQuantity) {
-                  handleQuantityChange(Math.round((val - minQuantity) / step) * step + minQuantity);
-                }
-              }
-            "
+            :value="quantityDraft ?? quantity"
+            @input="(e) => handleQuantityInput((e.target as HTMLInputElement).value)"
+            @blur="handleQuantityBlur"
           />
         </template>
       </slot>
@@ -539,7 +527,7 @@ import { onMounted, ref, watch, computed, type Component } from "vue";
 import { BundleItem, Cart, CartBaseItem, CartMainItem, Cluster, Contact, Crossupsell, type CrossupsellSearchInput, type CrossupsellsQueryVariables, CrossupsellType, Customer, GraphQLClient, type MediaImageProductSearchInput, Product, ProductInventory, type TransformationsInput, YesNo } from "@propeller-commerce/propeller-sdk-v2";
 import { useCart } from "../composables/vue/useCart";
 import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
-import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
+import { localeForLanguage, resolveOrderableQuantity } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getProductImageUrl as _getProductImageUrl,
   getProductSku as _getProductSku,
@@ -765,6 +753,8 @@ const {
 });
 
 const quantity = ref<CartItemState["quantity"]>(1);
+/** Raw field text while editing; `null` when not being edited. */
+const quantityDraft = ref<string | null>(null);
 const notes = ref<CartItemState["notes"]>("");
 
 // Order quantity rules from the product: `minimumQuantity` (floor) and `unit`
@@ -925,6 +915,33 @@ async function handleQuantityChange(
   if (updatedCart && props.afterCartUpdate) {
     props.afterCartUpdate(updatedCart);
   }
+}
+function handleQuantityDecrement(): void {
+  quantityDraft.value = null;
+  const orderable = resolveOrderableQuantity(quantity.value, minQuantity.value, step.value);
+  if (orderable !== quantity.value) { void handleQuantityChange(orderable); return; }
+  if (quantity.value - step.value >= minQuantity.value) {
+    void handleQuantityChange(quantity.value - step.value);
+  }
+}
+function handleQuantityIncrement(): void {
+  quantityDraft.value = null;
+  const orderable = resolveOrderableQuantity(quantity.value, minQuantity.value, step.value);
+  void handleQuantityChange(orderable === quantity.value ? quantity.value + step.value : orderable);
+}
+function handleQuantityInput(raw: string): void {
+  quantityDraft.value = raw;
+  const val = parseInt(raw, 10);
+  if (!isNaN(val) && val >= minQuantity.value) {
+    void handleQuantityChange(resolveOrderableQuantity(val, minQuantity.value, step.value));
+  }
+}
+function handleQuantityBlur(): void {
+  if (quantityDraft.value === null) return;
+  const val = parseInt(quantityDraft.value, 10);
+  quantityDraft.value = null;
+  const orderable = resolveOrderableQuantity(val, minQuantity.value, step.value);
+  if (orderable !== quantity.value) void handleQuantityChange(orderable);
 }
 function handleNoteChange(
   note: string,

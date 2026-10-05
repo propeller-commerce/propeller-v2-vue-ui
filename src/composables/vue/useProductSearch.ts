@@ -272,11 +272,10 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
       const customerId: number | undefined =
         user && 'customerId' in user ? (user as Customer).customerId : undefined;
 
-      // Orderlist (contract) scoping. When orderlistIds are supplied, apply them
-      // (unless explicitly disabled); otherwise send applyOrderlists:false so an
-      // authenticated user without a contract still sees the full catalogue.
-      // `applyOrderlists`/`orderlistIds` are accepted by the backend but not yet
-      // present on the SDK's CategoryProductSearchInput type — cast to include them.
+      // Orderlist (contract) scoping. Omit the flag unless the caller opts in or
+      // out: the backend applies the company's own orderlists by default, and
+      // sending `false` made every refetch return the unscoped catalogue.
+      // Not yet on the SDK's CategoryProductSearchInput type — cast to include.
       const orderlistIdsVal = options.orderlistIds?.value;
       const orderlistScope =
         orderlistIdsVal && orderlistIdsVal.length > 0
@@ -284,7 +283,9 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
               applyOrderlists: options.applyOrderlists?.value !== false,
               orderlistIds: orderlistIdsVal,
             }
-          : { applyOrderlists: false };
+          : options.applyOrderlists?.value === false
+            ? { applyOrderlists: false }
+            : {};
 
       const categoryProductSearchInput = {
         language: lang,
@@ -431,9 +432,8 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
           return;
         }
 
-        // When orderlistIds are supplied, apply them (unless explicitly
-        // disabled); otherwise send applyOrderlists:false so an authed user
-        // without a contract still previews the full catalogue.
+        // Same scoping rule as the grid: omit the flag so the backend applies
+        // the company's orderlists, keeping the preview and the grid in sync.
         const searchOrderlistIds = options.orderlistIds?.value;
         const orderlistScope =
           searchOrderlistIds && searchOrderlistIds.length > 0
@@ -441,7 +441,9 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
                 applyOrderlists: options.applyOrderlists?.value !== false,
                 orderlistIds: searchOrderlistIds,
               }
-            : { applyOrderlists: false };
+            : options.applyOrderlists?.value === false
+              ? { applyOrderlists: false }
+              : {};
 
         const user = userRef.value;
         const userId = resolveListingUserId(user, configuration);
