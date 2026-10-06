@@ -252,6 +252,7 @@ import {
   YesNo,
 } from "@propeller-commerce/propeller-sdk-v2";
 import { useProductInfo } from "../composables/vue/useProductInfo";
+import { useInfraProps } from "../composables/vue/useInfraProps";
 import {
   getLanguageString,
   getLanguageUri,
@@ -457,15 +458,33 @@ const props = withDefaults(defineProps<ProductInfoProps>(), {
   showTitle: true,
 });
 
-const userRef = computed(() => props.user ?? null);
-const companyRef = computed(() => props.companyId);
+// Resolve infra (language, user, companyId, graphqlClient) from
+// <PropellerProvider> when the prop is absent; an explicit prop still wins.
+// Without this the heading fell back to a hardcoded "NL" and showed Dutch
+// product names on every other language's pages.
+const infra = useInfraProps(props);
+
+// Shadow the prop names so the template and its child components get the
+// resolved values too, not just the composable below.
+const language = computed(() => infra.language || "NL");
+const user = computed(() => infra.user ?? null);
+const companyId = computed(() => infra.companyId);
+const graphqlClient = computed(() => infra.graphqlClient);
+const currency = computed(() => infra.currency);
+const includeTax = computed(() => infra.includeTax);
+const configuration = computed(() => infra.configuration);
+const portalMode = computed(() => infra.portalMode);
+const isAuthenticated = computed(() => infra.isAuthenticated);
+
+const userRef = computed(() => infra.user ?? null);
+const companyRef = computed(() => infra.companyId);
 const orderlistIdsRef = computed(() => props.orderlistIds);
 const applyOrderlistsRef = computed(() => props.applyOrderlists);
-const langRef = computed(() => props.language || "NL");
+const langRef = computed(() => infra.language || "NL");
 
 const { product, cluster, loading, error, fetchProduct, fetchCluster } =
   useProductInfo({
-    graphqlClient: props.graphqlClient as GraphQLClient,
+    graphqlClient: infra.graphqlClient as GraphQLClient,
     language: langRef,
     taxZone: props.taxZone,
     user: userRef,
@@ -495,9 +514,9 @@ watch(
   () => [
     props.productId,
     props.product,
-    props.language,
-    props.user,
-    props.companyId,
+    infra.language,
+    infra.user,
+    infra.companyId,
   ],
   () => {
     if (props.product) {
@@ -521,7 +540,7 @@ function getDisplayProduct(): Product | null {
 function getProductName(p?: Product | null): string {
   const target = p ?? getDisplayProduct();
   if (!target) return "";
-  return getLanguageString(target.names, props.language || "NL", "");
+  return getLanguageString(target.names, infra.language || "NL", "");
 }
 function getProductSku(p?: Product | null): string {
   const target = p ?? getDisplayProduct();
@@ -552,7 +571,7 @@ const useNewShell = computed(() =>
 );
 
 const contentHidden = computed<boolean>(() =>
-  isContentHidden(props.portalMode, props.user, props.isAuthenticated),
+  isContentHidden(infra.portalMode, infra.user, infra.isAuthenticated),
 );
 
 const ImageImpl = computed(() => props.imageComponent ?? DefaultProductImage);

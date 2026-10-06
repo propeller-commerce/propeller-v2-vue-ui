@@ -16,3 +16,7 @@ export * from '@propeller-commerce/propeller-v2-core-ui';
 // Re-exported from `/shared` (type-only) so server modules can build the
 // tree without pulling the Vue composable's runtime into the server bundle.
 export type { MenuCategory } from './composables/vue/useMenu';
+
+// Pure predicate — SSR modules need it to decide whether to render a price
+// or the quote label, without pulling the Vue runtime.
+export { isPriceOnRequest } from './composables/shared/utils/priceOnRequest';

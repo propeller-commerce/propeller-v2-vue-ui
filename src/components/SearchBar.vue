@@ -363,8 +363,10 @@ onUnmounted(() => {
     document.removeEventListener('mousedown', clickOutsideListener.value.fn);
   }
 });
+// Explicit prop wins, then the `placeholder` label, then English — hosts that
+// pass only `labels` were otherwise stuck with the English literal.
 const placeholder = computed(() => {
-  return props.placeholder || 'Search products...';
+  return props.placeholder || getLabel('placeholder', 'Search products...');
 });
 const minLength = computed(() => {
   return props.minSearchLength !== undefined ? props.minSearchLength : 3;

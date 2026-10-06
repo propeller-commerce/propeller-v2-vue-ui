@@ -8,6 +8,37 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.29.0] - 2026-10-06
+
+### Added
+
+- **`isPriceOnRequest` is exported from `/shared`.** It was only on the main
+  entry, so an SSR module could not ask "is this a quoted product?" without
+  pulling the Vue runtime. The function is plain TS, so `/shared` is where it
+  belongs. Mirrors the React package.
+
+### Fixed
+
+- **`<ProductInfo>` resolves its infra from `<PropellerProvider>`.** It was the
+  one component that read its props raw instead of going through
+  `useInfraProps`, so `language` fell back to a hardcoded `"NL"` and the product
+  heading rendered the Dutch name on every other language's page — while the
+  breadcrumb, title and description beside it were correct. `user`, `companyId`,
+  `graphqlClient`, `currency`, `includeTax`, `configuration`, `portalMode` and
+  `isAuthenticated` now resolve from the provider too. Explicit props still win.
+
+- **`<OrderItemCard>`'s development warnings fire once per process again.** The
+  de-duplication set was declared inside `<script setup>`, which compiles into
+  `setup()` — so every card instance got its own and a 20-line order printed
+  each warning 20 times. Moved to module scope.
+
+- **`<SearchBar>` resolves its placeholder from `labels`.** It read
+  `props.placeholder` and fell straight back to the English
+  `'Search products...'`, never consulting the label bag every other string in
+  the component goes through. A host that passed only `labels` therefore got an
+  English placeholder in an otherwise translated header. The explicit prop
+  still wins, then `labels.placeholder`, then English.
+
 ## [0.28.0] - 2026-10-05
 
 ### Fixed

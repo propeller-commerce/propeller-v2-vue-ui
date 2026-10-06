@@ -186,6 +186,19 @@
   </tbody>
 </template>
 
+<script lang="ts">
+// Module scope, NOT `<script setup>`: that compiles into `setup()`, so the Set
+// would be per instance and a 20-line order printed each warning 20 times.
+const warnedOnce = new Set<string>();
+
+function warnOnce(key: string, message: string): void {
+  if (warnedOnce.has(key)) return;
+  warnedOnce.add(key);
+  // eslint-disable-next-line no-console
+  console.warn(message);
+}
+</script>
+
 <script setup lang="ts">
 import type { OrderItem } from "@propeller-commerce/propeller-sdk-v2";
 import { computed, type Component } from "vue";
@@ -317,17 +330,8 @@ const infra = useInfraProps(props);
  * clicks later as a mystery rather than at the call site.
  *
  * Each message is emitted once per process so a re-render cannot flood the
- * console.
+ * console. `warnOnce` lives in the module-scope `<script>` block above.
  */
-const warnedOnce = new Set<string>();
-
-function warnOnce(key: string, message: string): void {
-  if (warnedOnce.has(key)) return;
-  warnedOnce.add(key);
-  // eslint-disable-next-line no-console
-  console.warn(message);
-}
-
 function warnMissingProps(): void {
   if (process.env.NODE_ENV === 'production') return;
   if (!infra.language) {
