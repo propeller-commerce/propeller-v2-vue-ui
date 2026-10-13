@@ -213,12 +213,66 @@
                   </div>
                   <div class="border-t border-border pt-4 space-y-2 text-sm">
                     <div class="flex justify-between text-muted-foreground">
+                      <span>{{ getLabel("subtotal", "Subtotal:") }}</span
+                      ><span>{{
+                        formatPrice(selectedCart?.total?.subTotal ?? 0)
+                      }}</span>
+                    </div>
+                    <div
+                      v-if="(selectedCart?.total?.discount ?? 0) > 0"
+                      class="flex justify-between text-success"
+                    >
+                      <span>{{ getLabel("discount", "Discount:") }}</span
+                      ><span
+                        >-{{
+                          formatPrice(selectedCart?.total?.discount ?? 0)
+                        }}</span
+                      >
+                    </div>
+                    <!-- Shipping and transaction costs are already inside
+                         total.totalGross; without these rows the panel's own
+                         figures never add up to "Total excl. VAT". -->
+                    <div
+                      v-if="Number(selectedCart?.paymentData?.price ?? 0) > 0"
+                      class="flex justify-between text-muted-foreground"
+                    >
+                      <span>{{
+                        getLabel("transactionCosts", "Transaction costs:")
+                      }}</span
+                      ><span>{{
+                        formatPrice(Number(selectedCart?.paymentData?.price ?? 0))
+                      }}</span>
+                    </div>
+                    <div
+                      v-if="Number(selectedCart?.postageData?.price ?? 0) > 0"
+                      class="flex justify-between text-muted-foreground"
+                    >
+                      <span>{{
+                        getLabel("shippingCosts", "Shipping costs:")
+                      }}</span
+                      ><span>{{
+                        formatPrice(Number(selectedCart?.postageData?.price ?? 0))
+                      }}</span>
+                    </div>
+                    <div
+                      class="flex justify-between text-muted-foreground pt-2 border-t border-border"
+                    >
                       <span>{{
                         getLabel("totalExclVat", "Total excl. VAT:")
                       }}</span
                       ><span>{{
                         formatPrice(selectedCart?.total?.totalGross ?? 0)
                       }}</span>
+                    </div>
+                    <div
+                      v-for="(tax, index) in (selectedCart?.taxLevels ?? []).filter(
+                        (t) => t.taxPercentage > 0 && t.price > 0,
+                      )"
+                      :key="index"
+                      class="flex justify-between text-muted-foreground"
+                    >
+                      <span>{{ tax.taxPercentage }}% {{ getLabel("vat", "VAT") }}:</span
+                      ><span>{{ formatPrice(Number(tax.price)) }}</span>
                     </div>
                     <div class="flex justify-between text-muted-foreground">
                       <span>{{ getLabel("totalVat", "VAT:") }}</span
