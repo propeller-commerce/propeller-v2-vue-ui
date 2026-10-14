@@ -185,6 +185,7 @@
             <GridPagination
               :products="{ page: currentPage, pages: totalPages }"
               :onPageChange="handlePageChange"
+              :pageHref="pageHref"
               :labels="paginationLabels"
             />
           </div>
@@ -289,6 +290,11 @@ export interface MachineGridProps {
   // ── Controlled listing (parts) ───────────────────────────────────────────
   listing: MachineListingState;
   onListingChange: (next: MachineListingState) => void;
+  /**
+   * URL for a page of the parts listing. Forwarded to `GridPagination`, which
+   * renders anchors when it is supplied; the host owns the URL shape.
+   */
+  pageHref?: (page: number) => string;
 
   // ── Infra (resolved via useInfraProps; explicit wins) ────────────────────
   graphqlClient?: GraphQLClient;

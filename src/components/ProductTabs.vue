@@ -466,6 +466,13 @@ const hasDescription = computed(() => {
   return !!getLanguageString(props.product?.descriptions, props.language || 'NL', '');
 });
 
+// A tab whose panel would only say "No downloads" is noise, so downloads and
+// videos follow description: shown when the product actually has them.
+const hasDownloads = computed(
+  () => (props.product?.media?.documents?.items?.length || 0) > 0,
+);
+const hasVideos = computed(() => (props.product?.media?.videos?.items?.length || 0) > 0);
+
 onMounted(() => {
   // Set the first visible tab as active
   if (props.showDescription !== false && hasDescription.value) {
@@ -473,7 +480,7 @@ onMounted(() => {
   } else if (props.showSpecifications !== false) {
     activeTab.value = 'specifications';
     specsVisited.value = true;
-  } else if (props.showDownloads !== false) {
+  } else if (isTabVisible('downloads')) {
     activeTab.value = 'downloads';
   } else {
     activeTab.value = 'videos';
@@ -496,6 +503,12 @@ watch(
       if (props.productId && !fetchedAttributes.value.length) {
         fetchSpecs(props.productId);
       }
+    } else if (!isTabVisible(activeTab.value)) {
+      // Falling back matters now that downloads/videos can disappear: a product
+      // without them would otherwise leave the selected tab hidden and the
+      // panel area blank.
+      const next = ['description', 'specifications', 'downloads', 'videos'].find(isTabVisible);
+      if (next) activeTab.value = next;
     }
   },
   { immediate: true }
@@ -514,8 +527,8 @@ function onSpecificationsTabSelected(): void {
 function isTabVisible(tab: string): ReturnType<ProductTabsState['isTabVisible']> {
   if (tab === 'description') return props.showDescription !== false && hasDescription.value;
   if (tab === 'specifications') return props.showSpecifications !== false;
-  if (tab === 'downloads') return props.showDownloads !== false;
-  if (tab === 'videos') return props.showVideos !== false;
+  if (tab === 'downloads') return props.showDownloads !== false && hasDownloads.value;
+  if (tab === 'videos') return props.showVideos !== false && hasVideos.value;
   return false;
 }
 function isActive(tab: string): ReturnType<ProductTabsState['isActive']> {

@@ -870,7 +870,7 @@ const firstNameLabel = computed(() => {
   return props.labels?.firstName || 'First name';
 });
 const middleNameLabel = computed(() => {
-  return props.labels?.middleName || 'Insertion';
+  return props.labels?.middleName || 'Middle name';
 });
 const lastNameLabel = computed(() => {
   return props.labels?.lastName || 'Last name';
