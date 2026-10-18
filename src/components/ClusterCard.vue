@@ -251,24 +251,24 @@
           class="propeller-cluster-card__footer-meta flex items-center justify-between gap-3 md:contents"
         >
         <slot
-          v-if="showStock && !!cluster.defaultProduct?.inventory"
+          v-if="showStock && !!defaultInventory"
           name="stock"
           :cluster="cluster"
-          :inventory="cluster.defaultProduct?.inventory"
+          :inventory="defaultInventory"
           :showAvailability="false"
           :labels="stockLabels"
         >
           <component
             v-if="props.stockComponent"
             :is="StockImpl"
-            :inventory="cluster.defaultProduct?.inventory"
+            :inventory="defaultInventory"
             :show-availability="false"
             :show-stock="true"
             :labels="stockLabels"
           />
           <ItemStock
             v-else
-            :inventory="cluster.defaultProduct?.inventory"
+            :inventory="defaultInventory"
             :showAvailability="false"
             :showStock="true"
             :labels="stockLabels"
@@ -279,7 +279,7 @@
           v-if="!!getClusterPrice()"
           name="price"
           :cluster="cluster"
-          :price="cluster.defaultProduct?.price"
+          :price="defaultPrice"
           :includeTax="resolvedIncludeTax"
           :currency="currency"
           :labels="labels"
@@ -287,7 +287,7 @@
           <component
             v-if="props.priceComponent"
             :is="PriceImpl"
-            :price="cluster.defaultProduct?.price"
+            :price="defaultPrice"
             :include-tax="resolvedIncludeTax"
             :currency="currency"
             :labels="labels"
@@ -354,27 +354,27 @@
         </slot>
 
         <div
-          v-if="showStock && !!cluster.defaultProduct?.inventory"
+          v-if="showStock && !!defaultInventory"
           class="hidden md:block"
         >
           <slot
             name="stock"
             :cluster="cluster"
-            :inventory="cluster.defaultProduct?.inventory"
+            :inventory="defaultInventory"
             :showAvailability="showAvailability !== false"
             :labels="stockLabels"
           >
             <component
               v-if="props.stockComponent"
               :is="StockImpl"
-              :inventory="cluster.defaultProduct?.inventory"
+              :inventory="defaultInventory"
               :show-availability="showAvailability !== false"
               :show-stock="true"
               :labels="stockLabels"
             />
             <ItemStock
               v-else
-              :inventory="cluster.defaultProduct?.inventory"
+              :inventory="defaultInventory"
               :showAvailability="showAvailability !== false"
               :showStock="true"
               :labels="stockLabels"
@@ -439,7 +439,7 @@
           <slot
             name="price"
             :cluster="cluster"
-            :price="cluster.defaultProduct?.price"
+            :price="defaultPrice"
             :includeTax="resolvedIncludeTax"
             :currency="currency"
             :labels="labels"
@@ -448,7 +448,7 @@
               <component
                 v-if="props.priceComponent"
                 :is="PriceImpl"
-                :price="cluster.defaultProduct?.price"
+                :price="defaultPrice"
                 :include-tax="resolvedIncludeTax"
                 :currency="currency"
                 :labels="labels"
@@ -461,28 +461,28 @@
         </div>
       </div>
       <div
-        v-if="(showStock && !!cluster.defaultProduct?.inventory) || !!getClusterPrice()"
+        v-if="(showStock && !!defaultInventory) || !!getClusterPrice()"
         class="propeller-cluster-card__footer-meta flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 pt-1 sm:px-4 md:hidden"
       >
         <slot
-          v-if="showStock && !!cluster.defaultProduct?.inventory"
+          v-if="showStock && !!defaultInventory"
           name="stock"
           :cluster="cluster"
-          :inventory="cluster.defaultProduct?.inventory"
+          :inventory="defaultInventory"
           :showAvailability="showAvailability !== false"
           :labels="stockLabels"
         >
           <component
             v-if="props.stockComponent"
             :is="StockImpl"
-            :inventory="cluster.defaultProduct?.inventory"
+            :inventory="defaultInventory"
             :show-availability="showAvailability !== false"
             :show-stock="true"
             :labels="stockLabels"
           />
           <ItemStock
             v-else
-            :inventory="cluster.defaultProduct?.inventory"
+            :inventory="defaultInventory"
             :showAvailability="showAvailability !== false"
             :showStock="true"
             :labels="stockLabels"
@@ -493,7 +493,7 @@
           v-if="!!getClusterPrice()"
           name="price"
           :cluster="cluster"
-          :price="cluster.defaultProduct?.price"
+          :price="defaultPrice"
           :includeTax="resolvedIncludeTax"
           :currency="currency"
           :labels="labels"
@@ -501,7 +501,7 @@
           <component
             v-if="props.priceComponent"
             :is="PriceImpl"
-            :price="cluster.defaultProduct?.price"
+            :price="defaultPrice"
             :include-tax="resolvedIncludeTax"
             :currency="currency"
             :labels="labels"
@@ -534,9 +534,9 @@
 <script setup lang="ts">
 import { ref, computed, type Component } from "vue";
 
-import { Cluster, AttributeResult } from "@propeller-commerce/propeller-sdk-v2";
+import { Cluster, AttributeResult, Contact, Customer } from "@propeller-commerce/propeller-sdk-v2";
 import ItemStock from "./ItemStock.vue";
-import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { getLabel as _getLabel, isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import {
   getClusterImageUrl as _getClusterImageUrl,
@@ -670,6 +670,15 @@ export interface ClusterCardProps {
   /** Language code used to resolve localised names and slugs. Defaults to 'NL'. */
   language?: string;
 
+  /** Authenticated user. Resolved from PropellerProvider when omitted. */
+  user?: Contact | Customer | null;
+
+  /**
+   * Portal access mode. In `'semi-closed'` price and stock are withheld from
+   * anonymous visitors. Resolved from PropellerProvider when omitted.
+   */
+  portalMode?: string;
+
   // ───── Extension API ─────
   // Per-card overrides for sub-components.
   // (No addToCartComponent — ClusterCard does not render AddToCart by default.)
@@ -737,6 +746,21 @@ const resolved = computed(() => useResolvedProps(props, RESOLVE_SPEC));
 const infra = useInfraProps(props);
 const resolvedIncludeTax = computed<boolean>(() =>
   props.includeTax === true ? true : !!infra.includeTax,
+);
+
+// Folded into price/stock below so every render branch is gated.
+const contentHidden = computed<boolean>(() =>
+  isContentHidden(
+    (props.portalMode ?? infra.portalMode) as string | undefined,
+    (props.user ?? infra.user) as Contact | Customer | null | undefined,
+    infra.isAuthenticated as boolean | undefined,
+  ),
+);
+const defaultInventory = computed(() =>
+  contentHidden.value ? undefined : (props.cluster as Cluster)?.defaultProduct?.inventory,
+);
+const defaultPrice = computed(() =>
+  contentHidden.value ? undefined : (props.cluster as Cluster)?.defaultProduct?.price,
 );
 
 const PriceImpl = computed(() => resolved.value.priceComponent ?? DefaultProductPrice);
@@ -822,7 +846,7 @@ function getClusterPrice(): ReturnType<ClusterCardState["getClusterPrice"]> {
   if (!props.showPrice) return "";
   // A cluster follows its default product: that is the price the card shows.
   if (isPriceOnRequest(props.cluster)) return getLabel("priceOnRequest", "Price on request");
-  const priceObj = (props.cluster as Cluster)?.defaultProduct?.price;
+  const priceObj = defaultPrice.value;
   const useTax: boolean = resolvedIncludeTax.value;
   const value: number | undefined = useTax ? priceObj?.net : priceObj?.gross;
   if (!value && value !== 0) return "";

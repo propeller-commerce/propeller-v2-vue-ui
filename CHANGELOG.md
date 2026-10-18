@@ -8,6 +8,21 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.31.1] - 2026-10-18
+
+### Fixed
+
+- **`ClusterCard` showed price and stock to an anonymous visitor in a
+  semi-closed portal.** It had no portal gate, unlike `ProductCard` and the
+  React `ClusterCard`. It now reads `portalMode`, `user` and `isAuthenticated`
+  (props or `PropellerProvider`) and withholds the default product's price and
+  stock. New optional props: `user`, `portalMode`.
+- **`GridFilters` showed the price range and `ClusterOptions` the option prices
+  to an anonymous visitor in a semi-closed portal** unless the host passed
+  `portalMode` and `user` to the component itself. Both read them off `props`
+  and skipped `PropellerProvider`; they now resolve through the provider like
+  the other components.
+
 ## [0.31.0] - 2026-10-14
 
 ### Added

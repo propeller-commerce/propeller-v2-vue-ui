@@ -511,14 +511,22 @@ watch(
 function getLabel(key: string, fallback: string): string {
   return _getLabel(props.labels, key, fallback);
 }
+// Read through `infra` so a provider-level portalMode/user gates the filters too.
+function contentHidden(): boolean {
+  return isContentHidden(
+    infra.portalMode as string | undefined,
+    infra.user as typeof props.user,
+    infra.isAuthenticated as boolean | undefined,
+  );
+}
 function showPriceFilter(): ReturnType<GridFiltersState["showPriceFilter"]> {
-  const mode = (props.portalMode as string) || "open";
+  const mode = (infra.portalMode as string) || "open";
   if (mode === "open") return true;
-  return !!props.user;
+  return !!infra.user || !!infra.isAuthenticated;
 }
 function showAvailability(): ReturnType<GridFiltersState["showAvailability"]> {
   if (!props.showAvailabilityFilter) return false;
-  return !isContentHidden(props.portalMode, props.user, infra.isAuthenticated as boolean | undefined);
+  return !contentHidden();
 }
 function getFilterName(
   filter: AttributeFilter,
