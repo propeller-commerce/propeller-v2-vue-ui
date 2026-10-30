@@ -14,7 +14,7 @@
 // `src/index.ts` would fail on the `.vue` re-exports. So the entry points are
 // the package's pure-TS headless surface — the composables, the provider
 // (context), the SDK seam (lib) and the `shared` entry. That is the entire
-// documentable API; the `.vue` components' prop tables live in Storybook.
+// documentable API; the `.vue` components' props pages come from gen-components.mjs.
 //
 // Run from the `docs/` directory (npm scripts set cwd there).
 const {spawnSync} = require('child_process');
@@ -27,6 +27,10 @@ const toPosix = (p) => p.replace(/\\/g, '/');
 
 const docsDir = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(docsDir, '..');
+// Public GitHub mirror from package.json `repository`.
+const repoUrl = require(path.join(repoRoot, 'package.json')).repository.url
+  .replace(/^git\+/, '')
+  .replace(/\.git$/, '');
 
 // Entry points: the pure-TS public surface. `--entryPointStrategy expand`
 // walks each glob. The Vue composables, the shared composables/utilities/
@@ -78,8 +82,8 @@ const args = [
   '--excludePrivate',
   '--sanitizeComments',
   '--sourceLinkTemplate',
-  'https://gitlab.com/propellor-eu/cloud/frontend/ui/propeller-v2-vue-ui/-/blob/{gitRevision}/{path}#L{line}',
-  '--gitRevision', 'develop',
+  `${repoUrl}/blob/{gitRevision}/{path}#L{line}`,
+  '--gitRevision', 'master',
 ];
 
 const res = spawnSync('npx', args, {

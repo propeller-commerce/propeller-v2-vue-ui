@@ -63,7 +63,7 @@ in place of `availability?: Availability[]`.
 5. Add labels for the new keys: `allProducts`, `atLeast`, `pcs`,
    `quantityDecrease`, `quantityIncrease`. Remove `outOfStock`.
 
-Matches `propeller-v2-react-ui` 0.15.0.
+Matches `@propeller-commerce/propeller-v2-react-ui` 0.15.0.
 
 ## `Menu`: optional pre-fetched `tree` prop (additive)
 
@@ -95,7 +95,7 @@ useMenuStore().setTree(tree)
 <!-- AppHeader.vue or wherever the menu lives -->
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Menu as PropellerMenu } from 'propeller-v2-vue-ui'
+import { Menu as PropellerMenu } from '@propeller-commerce/propeller-v2-vue-ui'
 import { useMenuStore } from '@/stores/menu'
 
 const menuStore = useMenuStore()
@@ -122,7 +122,7 @@ context and the same pattern as it applies to `ProductGrid`.
 
 ---
 
-## From in-app components → the `propeller-v2-vue-ui` package
+## From in-app components → the `@propeller-commerce/propeller-v2-vue-ui` package
 
 Before this package existed, the Propeller Commerce Vue components and
 composables lived directly inside the `propeller-vue` storefront under
@@ -132,19 +132,19 @@ standalone package. This guide is for moving a consumer onto it.
 ### 1. Install the package
 
 ```bash
-npm install propeller-v2-vue-ui propeller-sdk-v2 --install-links
+npm install @propeller-commerce/propeller-v2-vue-ui @propeller-commerce/propeller-sdk-v2 --install-links
 ```
 
-`propeller-sdk-v2` is a **peer dependency** — install it yourself so the
+`@propeller-commerce/propeller-sdk-v2` is a **peer dependency** — install it yourself so the
 package and your app share one SDK instance. `--install-links` is needed
 on Windows for `file:` / `github:` installs (a symlinked install breaks the
-nested `propeller-sdk-v2` resolution).
+nested `@propeller-commerce/propeller-sdk-v2` resolution).
 
 ### 2. Import the stylesheet
 
 ```ts
 // main.ts
-import 'propeller-v2-vue-ui/styles.css';
+import '@propeller-commerce/propeller-v2-vue-ui/styles.css';
 ```
 
 Import it once, at your app entry. You no longer compile the components'
@@ -158,8 +158,8 @@ did `new XxxService(graphqlClient)` internally. Now:
 
 ```ts
 // src/lib/api.ts — YOUR app keeps this file; it just changes shape
-import { GraphQLClient } from 'propeller-sdk-v2';
-import { createServices } from 'propeller-v2-vue-ui';
+import { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
+import { createServices } from '@propeller-commerce/propeller-v2-vue-ui';
 
 export const graphqlClient = new GraphQLClient({
   endpoint: import.meta.env.VITE_GRAPHQL_ENDPOINT || '/api/graphql',
@@ -170,38 +170,47 @@ export const graphqlClient = new GraphQLClient({
 export const services = createServices(graphqlClient);
 ```
 
-Then install the provider once, high in the tree (root `App.vue`):
+Then install the app-wide deps once with the `propellerVue` plugin (in
+`main.ts`):
+
+```ts
+import { propellerVue } from '@propeller-commerce/propeller-v2-vue-ui';
+import { graphqlClient, services } from '@/lib/api';
+
+app.use(propellerVue, { graphqlClient, services, currency: '€', configuration: config });
+```
+
+…and bind the per-scope state with `<PropellerProvider>`, high in the tree
+(root `App.vue`):
 
 ```vue
 <script setup lang="ts">
-import { providePropeller } from 'propeller-v2-vue-ui';
-import { graphqlClient, services } from '@/lib/api';
+import { PropellerProvider } from '@propeller-commerce/propeller-v2-vue-ui';
 import { useAuthStore } from '@/stores/auth';
 import { useLanguageStore } from '@/stores/language';
 // …
 
 const auth = useAuthStore();
 const lang = useLanguageStore();
-
-providePropeller({
-  graphqlClient,
-  services,
-  user: auth.user,
-  companyId: undefined,
-  language: lang.language,
-  includeTax: false,
-  currency: '€',
-  configuration: config,
-  portalMode: 'open',
-});
 </script>
+
+<template>
+  <PropellerProvider
+    :user="auth.user"
+    :language="lang.language"
+    :include-tax="false"
+    portal-mode="open"
+  >
+    <RouterView />
+  </PropellerProvider>
+</template>
 ```
 
 ### 4. Update component imports
 
 ```diff
 - import ProductCard from '@/components/propeller/ProductCard.vue';
-+ import { ProductCard } from 'propeller-v2-vue-ui';
++ import { ProductCard } from '@propeller-commerce/propeller-v2-vue-ui';
 ```
 
 The 60 component names are unchanged.
@@ -213,7 +222,7 @@ option. Internally they now route through `createServices`. Update imports:
 
 ```diff
 - import { useCart } from '@/composables/useCart';
-+ import { useCart } from 'propeller-v2-vue-ui';
++ import { useCart } from '@propeller-commerce/propeller-v2-vue-ui';
 ```
 
 The three framework-agnostic cart helpers (`initCart`, `fetchActiveCart`,

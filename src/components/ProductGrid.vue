@@ -2,6 +2,7 @@
   <div
     :class="`propeller-product-grid w-full ${className || ''}`"
     :data-loading="getIsLoading() ? 'true' : 'false'"
+    :aria-busy="getIsLoading() || undefined"
   >
     <template v-if="getIsLoading()">
       <div

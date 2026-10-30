@@ -102,7 +102,7 @@ purchase-authorization screens it also backs (see [B2B](/guides/api/b2b)).
 
 Switching the active company changes the `companyId` used for cart lookup,
 pricing and authorization downstream — feed the new `companyId` back into
-the `Ref` you pass to `providePropeller` and the other composables, and the
+`<PropellerProvider :company-id>` and the `Ref` you pass to the other composables, and the
 whole tree re-resolves reactively.
 
 ## `useAddress`

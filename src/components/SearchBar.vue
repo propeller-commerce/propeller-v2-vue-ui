@@ -109,8 +109,11 @@
         </template>
 
         <template v-if="results.length === 0 && searchTerm.length >= minLength && !isLoading">
-          <div class="propeller-search-bar__empty p-4 text-center text-muted-foreground">
-            {{ getLabel('noResults', 'No products found for') }} &quot;{{ searchTerm }}&quot;
+          <div
+            :class="['propeller-search-bar__empty p-4 text-center text-muted-foreground', { 'propeller-search-bar__error': searchError }]"
+            :role="searchError ? 'alert' : undefined"
+          >
+            {{ searchEmptyMessage(props.labels, searchError, searchTerm) }}
           </div>
         </template>
       </div>
@@ -133,6 +136,7 @@ import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/pr
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
+import { searchEmptyMessage } from '../composables/shared/utils/searchStatus';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import PropellerImg from './PropellerImg.vue';
 // No host-config import: result URLs are built from the `configuration`
@@ -231,7 +235,10 @@ export interface SearchBarProps {
   /** Custom price formatting function */
   formatPrice?: (price: number) => string;
 
-  /** Labels for the component */
+  /**
+   * Labels for the component. Keys: `searchLabel`, `placeholder`, `viewAll`,
+   * `noResults`, `searchError` (shown when the search request fails).
+   */
   labels?: Record<string, string>;
 
   /**
@@ -323,7 +330,7 @@ const orderlistIdsRef = computed(() => props.orderlistIds);
 const applyOrderlistsRef = computed(() => props.applyOrderlists);
 const productTrackAttributesRef = computed(() => props.productTrackAttributes);
 
-const { search, searchResults, searchItemsFound, searchLoading } = useProductSearch({
+const { search, searchResults, searchItemsFound, searchLoading, searchError } = useProductSearch({
   graphqlClient: infra.graphqlClient,
   language: computed(() => infra.language || 'NL'),
   configuration: infra.configuration || {},

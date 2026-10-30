@@ -7,7 +7,7 @@ GraphQL API, plus the shared utilities and types those parts build on.
 
 📖 **Docs (canonical reference for props & usage):** https://propeller-commerce.github.io/propeller-v2-vue-ui/
 
-It is the Vue mirror of [`propeller-v2-react-ui`](https://github.com/propeller-commerce/propeller-v2-react-ui):
+It is the Vue mirror of [`@propeller-commerce/propeller-v2-react-ui`](https://github.com/propeller-commerce/propeller-v2-react-ui):
 same component set, same SDK seam, same styling contract.
 
 The package is framework-flexible within the Vue ecosystem: it runs in any
@@ -31,10 +31,10 @@ stylesheet, so you do **not** need Tailwind in your project to use it.
 ## Installation
 
 ```bash
-npm install propeller-v2-vue-ui propeller-sdk-v2 --install-links
+npm install @propeller-commerce/propeller-v2-vue-ui @propeller-commerce/propeller-sdk-v2 --install-links
 ```
 
-`propeller-sdk-v2` is a **peer dependency** — install it yourself so the
+`@propeller-commerce/propeller-sdk-v2` is a **peer dependency** — install it yourself so the
 package and your application share a single SDK instance. `--install-links`
 is needed on Windows for `file:` / `github:` installs.
 
@@ -43,7 +43,7 @@ is needed on Windows for `file:` / `github:` installs.
 | Package            | Version  | Required |
 | ------------------ | -------- | -------- |
 | `vue`              | `>=3.4`  | Yes      |
-| `propeller-sdk-v2` | `*`      | Yes      |
+| `@propeller-commerce/propeller-sdk-v2` | `*`      | Yes      |
 
 There is no dependency on Nuxt or `vue-router` — nothing in the package
 imports them. A plain Vite + Vue app works out of the box.
@@ -52,10 +52,10 @@ imports them. A plain Vite + Vue app works out of the box.
 
 | Import path                  | Contents                                              |
 | ----------------------------- | ----------------------------------------------------- |
-| `propeller-v2-vue-ui`         | Components, composables, the provider, `createServices`, `toPlain` |
-| `propeller-v2-vue-ui/shared`  | `createServices`, `toPlain`, formatters, helpers, types — pure TS |
-| `propeller-v2-vue-ui/pure`    | SSR-safe presentational components — no composables, no browser APIs |
-| `propeller-v2-vue-ui/styles.css` | The precompiled stylesheet |
+| `@propeller-commerce/propeller-v2-vue-ui`         | Components, composables, the provider, `createServices`, `toPlain` |
+| `@propeller-commerce/propeller-v2-vue-ui/shared`  | `createServices`, `toPlain`, formatters, helpers, types — pure TS |
+| `@propeller-commerce/propeller-v2-vue-ui/pure`    | SSR-safe presentational components — no composables, no browser APIs |
+| `@propeller-commerce/propeller-v2-vue-ui/styles.css` | The precompiled stylesheet |
 
 The `/shared` entry is plain TypeScript with no Vue dependency — import the
 pure helpers and `createServices` from there when you want them outside a
@@ -79,12 +79,14 @@ shape.
 
 The contract is three steps:
 
-1. **You construct the `GraphQLClient`** from `propeller-sdk-v2`, with your
+1. **You construct the `GraphQLClient`** from `@propeller-commerce/propeller-sdk-v2`, with your
    endpoint, headers and auth resolver.
 2. **You call `createServices(client)`** once — it returns a typed
    `Services` bundle (`product`, `cart`, `user`, `order`, …) keyed to that
    client.
-3. **You install both** via `providePropeller({ graphqlClient, services, … })`.
+3. **You install both** via `app.use(propellerVue, { graphqlClient, services, currency, configuration })`,
+   and bind the per-scope state (user, company, language, …) with
+   `<PropellerProvider>`.
 
 Inside the provider, every component and composable reads the services via
 `useServices()` — they never instantiate the SDK themselves.
@@ -100,8 +102,8 @@ downstream code sees the clean public shape.
 
 ```ts
 // src/lib/api.ts — your app owns this file
-import { GraphQLClient } from 'propeller-sdk-v2';
-import { createServices } from 'propeller-v2-vue-ui';
+import { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
+import { createServices } from '@propeller-commerce/propeller-v2-vue-ui';
 
 export const graphqlClient = new GraphQLClient({
   endpoint: import.meta.env.VITE_GRAPHQL_ENDPOINT || '/api/graphql',
@@ -112,49 +114,57 @@ export const graphqlClient = new GraphQLClient({
 export const services = createServices(graphqlClient);
 ```
 
-### 2. Install the provider and the stylesheet
+### 2. Install the plugin, the provider and the stylesheet
+
+The app-wide dependencies go in once, through the `propellerVue` plugin:
 
 ```ts
 // src/main.ts
 import { createApp } from 'vue';
+import { propellerVue } from '@propeller-commerce/propeller-v2-vue-ui';
+import '@propeller-commerce/propeller-v2-vue-ui/styles.css';
 import App from './App.vue';
-import 'propeller-v2-vue-ui/styles.css';
+import { graphqlClient, services } from '@/lib/api';
 
-createApp(App).mount('#app');
+createApp(App)
+  .use(propellerVue, {
+    graphqlClient,
+    services,
+    currency: '€',
+    configuration: {},   // free-form config bag (url builders, image filters)
+  })
+  .mount('#app');
 ```
+
+The per-scope state goes through the `<PropellerProvider>` component around
+your routed tree:
 
 ```vue
 <!-- src/App.vue -->
 <script setup lang="ts">
-import { providePropeller } from 'propeller-v2-vue-ui';
-import { graphqlClient, services } from '@/lib/api';
-
-providePropeller({
-  graphqlClient,
-  services,
-  user: null,            // your auth state (a Contact / Customer or null)
-  companyId: undefined,
-  language: 'NL',
-  includeTax: false,
-  currency: '€',
-  configuration: {},     // free-form config bag (url builders, image filters)
-  portalMode: 'open',
-});
+import { PropellerProvider } from '@propeller-commerce/propeller-v2-vue-ui';
 </script>
 
 <template>
-  <RouterView />
+  <PropellerProvider
+    :user="null"
+    language="NL"
+    :include-tax="false"
+    portal-mode="open"
+  >
+    <RouterView />
+  </PropellerProvider>
 </template>
 ```
 
-`providePropeller` must be called in a component's `setup()` (typically the
-root `App.vue`) so the `provide` reaches the whole tree.
+Bind the props to your auth / company / language / price stores (`:user`
+takes a `Contact` / `Customer` or `null`); the provider stays reactive.
 
 ### 3. Use components and composables anywhere below the provider
 
 ```vue
 <script setup lang="ts">
-import { ProductCard } from 'propeller-v2-vue-ui';
+import { ProductCard } from '@propeller-commerce/propeller-v2-vue-ui';
 </script>
 
 <template>
@@ -164,23 +174,36 @@ import { ProductCard } from 'propeller-v2-vue-ui';
 
 ## The Propeller provider
 
-`providePropeller(value)` installs a `PropellerInfra` object for the
-component subtree. `usePropellerContext()` reads it (non-throwing — returns
-`null` outside a provider).
+Infrastructure comes from two tiers:
 
-### `PropellerInfra` fields
+- `app.use(propellerVue, deps)` installs the app-wide `PropellerDeps` once.
+- `<PropellerProvider>` provides the per-scope `PropellerScope` for its
+  subtree; nest another one deeper to override the scope (impersonation,
+  multi-cart, …).
+
+`usePropellerContext()` reads the merged `PropellerInfra` (non-throwing —
+returns `null` when either tier is missing).
+
+### `PropellerDeps` fields (`propellerVue` plugin options)
 
 | Field           | Type                       | Notes |
 | --------------- | -------------------------- | ----- |
 | `graphqlClient` | `GraphQLClient`            | The client you constructed. |
 | `services`      | `Services`                 | The bundle from `createServices(client)`. |
-| `user`          | `Contact \| Customer \| null` | Your auth state. |
-| `companyId`     | `number \| undefined`      | Active company for B2B pricing. |
-| `language`      | `string`                   | e.g. `'NL'`, `'EN'`. |
-| `includeTax`    | `boolean`                  | Leading price is net (incl. VAT) when true. |
-| `currency`      | `string`                   | Currency symbol for price formatting. |
+| `currency`      | `string`                   | Currency symbol for price formatting. Default `'€'`. |
 | `configuration` | `unknown`                  | Config bag (url builders, image filters). Recognized keys include `baseCategoryId` and `anonymousUserId` — see below. |
-| `portalMode`    | `string`                   | e.g. `'open'`, `'semi-closed'`. |
+| `imgComponent`  | `Component` (optional)     | Replaces the `<img>` every component renders. |
+
+### `<PropellerProvider>` props
+
+| Prop              | Type                       | Notes |
+| ----------------- | -------------------------- | ----- |
+| `user`            | `Contact \| Customer \| null` | Your auth state. Default `null`. |
+| `isAuthenticated` | `boolean` (optional)       | Whether a session exists before `user` has loaded. |
+| `companyId`       | `number \| undefined`      | Active company for B2B pricing. |
+| `language`        | `string`                   | e.g. `'NL'`, `'EN'`. Default `'EN'`. |
+| `includeTax`      | `boolean`                  | Leading price is net (incl. VAT) when true. Default `false`. |
+| `portalMode`      | `string`                   | e.g. `'open'`, `'semi-closed'`. Default `'open'`. |
 
 **`configuration.anonymousUserId`** — the channel's guest account. Listing
 composables scope logged-out catalog queries to it, so the client asks the
@@ -231,7 +254,7 @@ whole-card swap, ProductInfo expanded shell, and contract types.
 The 15 composables are headless — reactive state + actions, no markup.
 
 ```ts
-import { useCart } from 'propeller-v2-vue-ui';
+import { useCart } from '@propeller-commerce/propeller-v2-vue-ui';
 import { computed } from 'vue';
 import { graphqlClient } from '@/lib/api';
 
@@ -255,7 +278,7 @@ The framework-agnostic cart helpers (`initCart`, `fetchActiveCart`,
 The package ships a precompiled stylesheet — import it once:
 
 ```ts
-import 'propeller-v2-vue-ui/styles.css';
+import '@propeller-commerce/propeller-v2-vue-ui/styles.css';
 ```
 
 Three override surfaces — theme tokens (CSS variables), BEM hook classes,
@@ -263,11 +286,13 @@ and a per-instance `class` attribute. Full detail in [STYLING.md](./STYLING.md).
 
 ## API reference
 
-### From `propeller-v2-vue-ui`
+### From `@propeller-commerce/propeller-v2-vue-ui`
 
 - **SDK seam:** `createServices`, `toPlain`, `Services` (type)
-- **Provider:** `providePropeller`, `usePropellerContext`,
-  `provideProductGridConfig`, `useProductGridConfig`, `PropellerInfra` /
+- **Provider:** `propellerVue` (plugin), `PropellerProvider` (component),
+  `usePropellerContext`, `useRequiredPropellerContext`, `usePropellerDeps`,
+  `tryUsePropellerDeps`, `provideProductGridConfig`, `useProductGridConfig`,
+  `PropellerDeps` / `PropellerScope` / `PropellerInfra` /
   `ProductGridConfig` (types)
 - **Composables:** `useAddress`, `useAuth`, `useCart`, `useCheckout`,
   `useClusterConfigurator`, `useCompany`, `useFavorites`, `useInfraProps`,
@@ -280,7 +305,7 @@ and a per-instance `class` attribute. Full detail in [STYLING.md](./STYLING.md).
   `isCustomer`, … (see `src/index.ts` for the full list)
 - **60 components** — `AccountIconAndMenu` … `UserDetails`
 
-### From `propeller-v2-vue-ui/shared`
+### From `@propeller-commerce/propeller-v2-vue-ui/shared`
 
 The runtime-agnostic subset: `createServices`, `toPlain`, the framework-free
 utilities, and all domain types. No Vue, safe in a server context.

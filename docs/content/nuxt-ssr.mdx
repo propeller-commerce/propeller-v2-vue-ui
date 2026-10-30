@@ -13,9 +13,9 @@ package's components server-side the same way it renders its own.
 
 | Import path                   | Contents                                              | Where |
 | ------------------------------ | ----------------------------------------------------- | ----- |
-| `propeller-v2-vue-ui`          | Components, composables, the provider, `createServices`, `toPlain` | App |
-| `propeller-v2-vue-ui/shared`   | `createServices`, `toPlain`, formatters, helpers, types | App or server context |
-| `propeller-v2-vue-ui/pure`     | SSR-safe presentational components — no composables, no browser APIs | App, SSR shell |
+| `@propeller-commerce/propeller-v2-vue-ui`          | Components, composables, the provider, `createServices`, `toPlain` | App |
+| `@propeller-commerce/propeller-v2-vue-ui/shared`   | `createServices`, `toPlain`, formatters, helpers, types | App or server context |
+| `@propeller-commerce/propeller-v2-vue-ui/pure`     | SSR-safe presentational components — no composables, no browser APIs | App, SSR shell |
 
 The main entry pulls in the Vue component tree. The `/shared` entry is
 plain TypeScript with no Vue dependency — import the pure helpers and
@@ -39,8 +39,8 @@ Propeller data on the server, host a small module in your own app:
 
 ```ts
 // server/propeller.ts — in YOUR Nuxt app
-import { GraphQLClient } from 'propeller-sdk-v2';
-import { createServices, toPlain } from 'propeller-v2-vue-ui/shared';
+import { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
+import { createServices, toPlain } from '@propeller-commerce/propeller-v2-vue-ui/shared';
 
 export function createServerClient(accessToken?: string) {
   return new GraphQLClient({
@@ -74,8 +74,10 @@ export async function fetchProduct(productId: number, language = 'NL') {
 
 ## The provider under SSR
 
-`providePropeller` is a normal Vue `provide`. It works during SSR — call it
-in your root component's `setup()`. The infra object carries the
+The `propellerVue` plugin and `<PropellerProvider>` are normal Vue
+`app.provide` / `provide`, so both work during SSR — install the plugin on
+the per-request app (in Nuxt, a plugin calling `nuxtApp.vueApp.use(propellerVue, …)`)
+and mount the provider in your root component. The plugin options carry the
 `graphqlClient` + `services`; build a request-scoped client on the server
 (so each request can carry its own auth token) rather than a module-level
 singleton.

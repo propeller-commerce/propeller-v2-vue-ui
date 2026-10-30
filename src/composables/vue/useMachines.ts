@@ -106,7 +106,8 @@ export function useMachines(options: UseMachinesOptions): UseMachinesReturn {
   const sourceIdsRef = options.sourceIds ?? ref<string[]>([]);
 
   const internalMachines = ref<SparePartsMachine[]>([]) as Ref<SparePartsMachine[]>;
-  const isLoading = ref(false);
+  // Start loading when a fetch will run, so the first render (SSR too) is not an empty state.
+  const isLoading = ref(!!graphqlClient && !!sourceRef.value && (sourceIdsRef.value?.length ?? 0) > 0);
 
   /** Per-instance guard: only the newest fetch commits. Mirrors `useSpareParts`. */
   let fetchId = 0;

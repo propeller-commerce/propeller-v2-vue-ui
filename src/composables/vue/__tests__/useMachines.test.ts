@@ -74,3 +74,24 @@ describe('useMachines fetch gate', () => {
     expect(machines.value).toEqual([{ id: '1' }]);
   });
 });
+
+describe('useMachines — first render', () => {
+  it('reports loading before the first fetch when it is about to fetch', () => {
+    const { isLoading } = useMachines({
+      graphqlClient: { execute: () => new Promise(() => {}) } as never,
+      source: ref('ACME'),
+      sourceIds: ref(['M-1']),
+      language: ref('EN'),
+    });
+    expect(isLoading.value).toBe(true);
+  });
+
+  it('is not loading when there is nothing to fetch', () => {
+    const { isLoading } = useMachines({
+      graphqlClient: { execute: () => new Promise(() => {}) } as never,
+      source: ref('ACME'),
+      sourceIds: ref([]),
+    });
+    expect(isLoading.value).toBe(false);
+  });
+});

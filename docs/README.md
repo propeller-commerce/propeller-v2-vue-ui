@@ -50,7 +50,7 @@ This site has **two** reference surfaces, by design:
 
 1. **TypeDoc API reference** (`content/api/**`) — auto-generated from the
    package's *pure-TS headless surface*: the composables, the provider
-   (`providePropeller` / `usePropellerContext`), the SDK seam
+   (`propellerVue` / `usePropellerContext`), the SDK seam
    (`createServices`, `toPlain`), the utilities and the domain types.
    `npm run gen:api` runs TypeDoc (`scripts/gen-api.js`) then makes the
    output MDX-safe (`scripts/sanitize-api-mdx.js`). It runs automatically

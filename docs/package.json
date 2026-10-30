@@ -5,7 +5,8 @@
   "description": "Docusaurus documentation site for propeller-v2-vue-ui. Not published to npm.",
   "scripts": {
     "docusaurus": "docusaurus",
-    "gen:api": "node scripts/gen-api.js && node scripts/sanitize-api-mdx.js",
+    "gen:api": "node scripts/gen-api.js && node scripts/gen-components.mjs && node scripts/sanitize-api-mdx.js",
+    "gen:components": "node scripts/gen-components.mjs",
     "prestart": "npm run gen:api",
     "start": "docusaurus start",
     "prebuild": "npm run gen:api",

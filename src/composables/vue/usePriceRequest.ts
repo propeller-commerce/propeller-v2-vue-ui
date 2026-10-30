@@ -18,6 +18,7 @@ import {
   removeItem,
   setItemQuantity,
   type PriceRequestItem,
+  type PriceRequestSubmitExtras,
 } from '../shared/utils/priceRequestList';
 
 export const PRICE_REQUEST_STORAGE_KEY = 'propeller_price_request';
@@ -27,11 +28,16 @@ const PRICE_REQUEST_EVENT = 'priceRequestChanged';
 
 export interface UsePriceRequestOptions {
   /**
-   * Sends the finished request. Receives the list and the shopper's comment;
+   * Sends the finished request. Receives the list, the shopper's comment and
+   * the form extras (`website` honeypot: non-empty means a bot);
    * resolve to report success. Supplied by the host — the API has no mutation
    * for this.
    */
-  onSubmit?: (items: PriceRequestItem[], comment: string) => Promise<void> | void;
+  onSubmit?: (
+    items: PriceRequestItem[],
+    comment: string,
+    extras: PriceRequestSubmitExtras
+  ) => Promise<void> | void;
   /** Overrides the localStorage key, for hosts running several shops per origin. */
   storageKey?: string;
 }
@@ -48,7 +54,7 @@ export interface UsePriceRequestReturn {
   clear: () => void;
   has: (code: string) => boolean;
   /** Sends the list via `onSubmit`, clearing it only on success. */
-  submit: (comment: string) => Promise<boolean>;
+  submit: (comment: string, extras?: PriceRequestSubmitExtras) => Promise<boolean>;
   submitting: Ref<boolean>;
   error: Ref<string | null>;
 }
@@ -128,7 +134,7 @@ export function usePriceRequest(options: UsePriceRequestOptions = {}): UsePriceR
     return containsItem(items.value, code);
   }
 
-  async function submit(comment: string): Promise<boolean> {
+  async function submit(comment: string, extras: PriceRequestSubmitExtras = {}): Promise<boolean> {
     const current = read(storageKey);
     if (!current.length) {
       error.value = 'empty';
@@ -141,7 +147,7 @@ export function usePriceRequest(options: UsePriceRequestOptions = {}): UsePriceR
     submitting.value = true;
     error.value = null;
     try {
-      await options.onSubmit(current, comment);
+      await options.onSubmit(current, comment, extras);
       commit([]);
       return true;
     } catch (e) {

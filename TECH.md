@@ -4,7 +4,7 @@ Engineering reference for the package. For day-to-day workflow see
 [CONTRIBUTING.md](./CONTRIBUTING.md); for consumer usage see
 [README.md](./README.md).
 
-This package is the Vue mirror of `propeller-v2-react-ui`. Where the two
+This package is the Vue mirror of `@propeller-commerce/propeller-v2-react-ui`. Where the two
 diverge, it is noted; otherwise assume parity.
 
 ## 1. What this package is
@@ -63,7 +63,7 @@ hosts that itself.
 ## 4. The SDK seam
 
 `src/lib/createServices.ts` and `src/lib/toPlain.ts` are copied **verbatim**
-from `propeller-v2-react-ui` — pure TS, framework-agnostic, identical across
+from `@propeller-commerce/propeller-v2-react-ui` — pure TS, framework-agnostic, identical across
 the two packages.
 
 `createServices(client: GraphQLClient): Services` builds a bundle of all 15
@@ -83,14 +83,18 @@ reactivity see the clean public type.
 
 ## 5. The provider — `provide` / `inject`
 
-`src/context/PropellerContext.ts` defines `PropellerInjectionKey` (a
-`Symbol`-keyed `InjectionKey<PropellerInfra>`), `providePropeller(value)`,
-and `usePropellerContext()`.
+Two tiers. `src/plugin.ts` defines the `propellerVue` plugin and
+`PropellerDepsKey` (a `Symbol`-keyed `InjectionKey<PropellerDeps>`):
+`app.use(propellerVue, { graphqlClient, services, currency, configuration })`
+installs the app-wide deps once. `src/context/PropellerContext.ts` defines
+`PropellerScopeKey` and `usePropellerContext()`; the
+`<PropellerProvider>` component (`src/components/PropellerProvider.vue`)
+provides the per-scope state (`user`, `companyId`, `language`,
+`includeTax`, `portalMode`) from its props.
 
-This is the Vue analogue of React's `<PropellerProvider value={…}>`. The
-consumer calls `providePropeller` once in its root `setup()` with the
-constructed `graphqlClient` + `services` and the reactive auth / language /
-currency state. Components and composables below it read the infra.
+This is the Vue analogue of React's `<PropellerDepsProvider>` +
+`<PropellerProvider>`. Components and composables below the provider read
+the merged infra.
 
 `src/context/ProductGridContext.ts` is the Tier-2 grid config provider —
 `provideProductGridConfig` / `useProductGridConfig`. `ProductGrid` installs
@@ -192,7 +196,7 @@ miss.
 CLI. The consumer imports that one file; they do not need Tailwind.
 
 Theme tokens (`:root` CSS variables) and BEM hook class names are kept
-**identical to `propeller-v2-react-ui`**, so a project running both
+**identical to `@propeller-commerce/propeller-v2-react-ui`**, so a project running both
 frameworks can share a single override stylesheet. See
 [STYLING.md](./STYLING.md).
 

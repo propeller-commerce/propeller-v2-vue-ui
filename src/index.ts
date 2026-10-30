@@ -11,7 +11,7 @@
 // ── SDK seam + pure utilities + domain types (re-exported from core) ──────
 // The package ships no `graphqlClient` singleton and no hardcoded endpoint.
 // Consumers construct their own `GraphQLClient`, call `createServices(client)`
-// once at startup, and install both via `providePropeller({ graphqlClient,
+// once at startup, and install both via `app.use(propellerVue, { graphqlClient,
 // services, ... })`. Composables read services via `useServices()` or accept
 // an explicit `graphqlClient` option from which they derive a bundle.
 //
@@ -148,6 +148,7 @@ export {
   setItemQuantity as setPriceRequestItemQuantity,
   containsItem as priceRequestContains,
   type PriceRequestItem,
+  type PriceRequestSubmitExtras,
 } from './composables/shared/utils/priceRequestList';
 
 export { isPriceOnRequest } from './composables/shared/utils/priceOnRequest';

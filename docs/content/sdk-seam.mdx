@@ -22,16 +22,17 @@ would lock it to one app shape. So the package doesn't.
 
 ## The contract: three steps
 
-1. **You construct the `GraphQLClient`** from `propeller-sdk-v2`, with your
+1. **You construct the `GraphQLClient`** from `@propeller-commerce/propeller-sdk-v2`, with your
    endpoint, headers and auth resolver.
 2. **You call `createServices(client)`** once — it returns a typed
    `Services` bundle (`product`, `cart`, `user`, `order`, …) keyed to that
    client.
-3. **You install both** via `providePropeller({ graphqlClient, services, … })`.
+3. **You install both** via `app.use(propellerVue, { graphqlClient, services, currency, configuration })`,
+   and bind the per-scope state with `<PropellerProvider>`.
 
 ```ts
-import { GraphQLClient } from 'propeller-sdk-v2';
-import { createServices } from 'propeller-v2-vue-ui';
+import { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
+import { createServices } from '@propeller-commerce/propeller-v2-vue-ui';
 
 const graphqlClient = new GraphQLClient({ endpoint: '/api/graphql', apiKey: '' });
 const services = createServices(graphqlClient);
@@ -61,6 +62,6 @@ The package has **no `/server` entry**. Server-side wiring (endpoint, API
 keys, cookie names, auth) is just as application-specific as the client. If
 you fetch Propeller data in a Nuxt server context, host that code in your
 own app; `createServices` and `toPlain` are exported from
-`propeller-v2-vue-ui/shared` — a pure-TS entry with no Vue dependency — so
+`@propeller-commerce/propeller-v2-vue-ui/shared` — a pure-TS entry with no Vue dependency — so
 you can build a services bundle around a server-side client without pulling
 the component tree into the server graph. See [Nuxt & SSR](/nuxt-ssr).

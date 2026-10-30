@@ -41,7 +41,8 @@ is in `src/__mocks__/`:
   `services.x.y(...)` call resolves to fixture data, so interactive
   components render without a real SDK.
 - **`decorators.ts`** — `withPropeller` wraps a story in a host component
-  that calls `providePropeller()` with the mock infra; `withMaxWidth`
+  that provides the mock deps (as the `propellerVue` plugin would) and
+  mounts `<PropellerProvider>` with the mock scope; `withMaxWidth`
   constrains the canvas.
 
 Storybook is for **visual** development. It is not a behaviour-test layer —

@@ -117,6 +117,8 @@ export interface UseProductSearchReturn {
   searchResults: Ref<(Product | Cluster)[]>;
   searchItemsFound: Ref<number>;
   searchLoading: Ref<boolean>;
+  /** `true` when the latest search-bar query failed, as opposed to finding nothing. */
+  searchError: Ref<boolean>;
   // Actions
   fetchProducts: () => Promise<void>;
   search: (term: string) => void;
@@ -157,7 +159,9 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
   const searchResults = ref<(Product | Cluster)[]>([]) as Ref<(Product | Cluster)[]>;
   const searchItemsFound = ref(0);
   const searchLoading = ref(false);
+  const searchError = ref(false);
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
+  let searchId = 0;
 
   const pagination = usePagination(pageSizeRef.value);
 
@@ -406,9 +410,13 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
   function search(term: string): void {
     searchTerm.value = term;
     if (searchTimer) clearTimeout(searchTimer);
+    // Supersedes any in-flight search so its late result can't commit.
+    const thisSearchId = ++searchId;
+    searchError.value = false;
     if (!term.trim()) {
       searchResults.value = [];
       searchItemsFound.value = 0;
+      searchLoading.value = false;
       return;
     }
     searchTimer = setTimeout(async () => {
@@ -523,6 +531,7 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
         };
 
         const response = await service.getCategory(variables);
+        if (thisSearchId !== searchId) return;
         const productsResponse = response?.products as ProductsResponse | undefined;
         const rawItems = (productsResponse?.items ?? []) as (Product | Cluster)[];
         // Drop products with no name in the active language — same as the grid
@@ -533,11 +542,14 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
         const apiTotal = productsResponse?.itemsFound ?? rawItems.length;
         searchResults.value = items;
         searchItemsFound.value = Math.max(0, apiTotal - untranslated);
-      } catch {
+      } catch (e) {
+        if (thisSearchId !== searchId) return;
+        console.error('[useProductSearch] search error:', e);
         searchResults.value = [];
         searchItemsFound.value = 0;
+        searchError.value = true;
       } finally {
-        searchLoading.value = false;
+        if (thisSearchId === searchId) searchLoading.value = false;
       }
     }, 300);
   }
@@ -602,6 +614,7 @@ export function useProductSearch(options: UseProductSearchOptions): UseProductSe
     searchResults,
     searchItemsFound,
     searchLoading,
+    searchError,
     fetchProducts,
     search,
     goToPage: pagination.goToPage,

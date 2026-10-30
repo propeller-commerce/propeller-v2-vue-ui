@@ -73,6 +73,22 @@
       ></textarea>
     </div>
 
+    <!-- Honeypot: off-screen rather than display:none, which some bots skip. -->
+    <div class="propeller-price-request__honeypot" :style="HONEYPOT_STYLE" aria-hidden="true">
+      <label for="propeller-price-request-website">
+        {{ L('honeypotLabel', 'Leave this field empty') }}
+      </label>
+      <input
+        id="propeller-price-request-website"
+        v-model="website"
+        type="text"
+        name="website"
+        tabindex="-1"
+        autocomplete="off"
+        aria-hidden="true"
+      />
+    </div>
+
     <button
       type="submit"
       :disabled="submitting"
@@ -87,7 +103,10 @@
 import { ref } from 'vue';
 import { Trash2 } from 'lucide-vue-next';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
-import type { PriceRequestItem } from '../composables/shared/utils/priceRequestList';
+import type {
+  PriceRequestItem,
+  PriceRequestSubmitExtras,
+} from '../composables/shared/utils/priceRequestList';
 
 export interface PriceRequestListProps {
   /** The collected products. Pass `items` from `usePriceRequest`. */
@@ -96,13 +115,13 @@ export interface PriceRequestListProps {
   onRemove?: (code: string) => void;
   /** Changes a requested quantity. */
   onQuantityChange?: (code: string, quantity: number) => void;
-  /** Sends the request. Resolves true on success. */
-  onSubmit?: (comment: string) => Promise<boolean> | boolean;
+  /** Sends the request with the form extras (`website` honeypot). Resolves true on success. */
+  onSubmit?: (comment: string, extras: PriceRequestSubmitExtras) => Promise<boolean> | boolean;
   /** True while the request is in flight. */
   submitting?: boolean;
   /**
    * Override any UI string. Keys: `title`, `colCode`, `colName`, `colQuantity`,
-   * `comments`, `send`, `sending`, `empty`, `remove`, `sent`.
+   * `comments`, `send`, `sending`, `empty`, `remove`, `sent`, `honeypotLabel`.
    */
   labels?: Record<string, string>;
   /** Extra CSS class applied to the root element. */
@@ -112,7 +131,17 @@ export interface PriceRequestListProps {
 const props = defineProps<PriceRequestListProps>();
 
 const comment = ref('');
+const website = ref('');
 const sent = ref(false);
+
+const HONEYPOT_STYLE = {
+  position: 'absolute',
+  left: '-10000px',
+  top: 'auto',
+  width: '1px',
+  height: '1px',
+  overflow: 'hidden',
+} as const;
 
 function L(key: string, fallback: string): string {
   return _getLabel(props.labels, key, fallback);
@@ -126,7 +155,7 @@ function onQuantityInput(code: string, minQuantity: number, event: Event): void 
 async function handleSubmit(e: Event): Promise<void> {
   e.preventDefault();
   if (!props.onSubmit) return;
-  const ok = await props.onSubmit(comment.value);
+  const ok = await props.onSubmit(comment.value, { website: website.value });
   if (ok) {
     comment.value = '';
     sent.value = true;

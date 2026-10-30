@@ -28,7 +28,7 @@ composable (use* function)        ← reactive state, loading, error handling
 Services bundle (services.x)      ← built once by createServices()
    │  delegates to
    ▼
-propeller-sdk-v2 Service class    ← builds the GraphQL document
+@propeller-commerce/propeller-sdk-v2 Service class    ← builds the GraphQL document
    │  uses
    ▼
 GraphQLClient                     ← YOUR endpoint, headers, auth
@@ -44,11 +44,11 @@ transport. See [The SDK seam](/sdk-seam) for why.
 ## `GraphQLClient` — you build it
 
 The package ships no client and no endpoint. You construct a
-`GraphQLClient` from `propeller-sdk-v2` with the endpoint, headers, timeout
+`GraphQLClient` from `@propeller-commerce/propeller-sdk-v2` with the endpoint, headers, timeout
 and auth resolver that fit your app, and you keep ownership of it.
 
 ```ts
-import { GraphQLClient } from 'propeller-sdk-v2';
+import { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
 
 const graphqlClient = new GraphQLClient({
   endpoint: '/api/graphql',   // your route / proxy / upstream URL
@@ -72,7 +72,7 @@ visible to every composable.
 each wired to the client you passed.
 
 ```ts
-import { createServices } from 'propeller-v2-vue-ui';
+import { createServices } from '@propeller-commerce/propeller-v2-vue-ui';
 
 const services = createServices(graphqlClient);
 // services.cart, services.product, services.order, …
@@ -80,8 +80,8 @@ const services = createServices(graphqlClient);
 
 It is **memoised per client** with a `WeakMap` — calling it again with the
 same client returns the same bundle, so there is no cost to calling it
-freely. You pass `services` (and `graphqlClient`) into `providePropeller`
-once; from there `useServices()` returns the bundle anywhere in the tree.
+freely. You pass `services` (and `graphqlClient`) into the `propellerVue`
+plugin once; from there `useServices()` returns the bundle anywhere in the tree.
 
 See [`createServices`](/api/lib/createServices/functions/createServices) and
 [`Services`](/api/lib/createServices/interfaces/Services) in the reference.
@@ -91,7 +91,7 @@ See [`createServices`](/api/lib/createServices/functions/createServices) and
 There are two patterns, and the package uses both:
 
 1. **Via the provider** — a composable calls `useServices()` to read the
-   bundle from `providePropeller`. Used by `useServices` itself and the
+   bundle installed by the `propellerVue` plugin. Used by `useServices` itself and the
    pure context composables.
 2. **Via an explicit `graphqlClient` option** — most data composables
    (`useCart`, `useAuth`, `useOrders`, …) accept `graphqlClient` in their
@@ -155,8 +155,8 @@ if (!result.success) {
 }
 ```
 
-The exception is `useServices()`, which **throws** if called outside
-`providePropeller` — that is an integration mistake, not a runtime error,
+The exception is `useServices()`, which **throws** if the
+`propellerVue` plugin is not installed — that is an integration mistake, not a runtime error,
 so it fails loudly and early.
 
 ## Authentication, in one paragraph

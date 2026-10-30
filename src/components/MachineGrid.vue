@@ -5,9 +5,12 @@
       <h1 class="propeller-grid-title mb-6 text-2xl font-semibold">
         {{ rootTitle ?? 'Machines' }}
       </h1>
-      <p v-if="rootLoading" class="py-12 text-center text-foreground-subtle">
-        {{ getMachineLabel('loading', 'Loading…') }}
-      </p>
+      <template v-if="rootLoading">
+        <p role="status" class="sr-only">{{ getMachineLabel('loading', 'Loading…') }}</p>
+        <div aria-busy="true" data-loading="true" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <MachineCardSkeleton v-for="i in rootSkeletonCount" :key="i" />
+        </div>
+      </template>
       <p v-else-if="rootCards.length === 0" class="py-12 text-center text-foreground-subtle">
         {{ getMachineLabel('noMachines', 'No machines found.') }}
       </p>
@@ -31,7 +34,7 @@
     <!-- The slug resolved in no language we know of. Without this the page
          rendered a title title-cased from the URL above an empty parts list and
          no error, so a machine that could not be opened looked exactly like one
-         with no parts (PWP-993). -->
+         with no parts. -->
     <template v-else-if="notFound && !partsLoading">
       <nav aria-label="Breadcrumb" class="propeller-breadcrumbs mb-6">
         <ol class="flex flex-wrap items-center gap-2 text-sm text-foreground-subtle">
@@ -65,7 +68,12 @@
               aria-current="page"
               class="text-foreground"
             >
-              {{ machineName }}
+              <span
+                v-if="firstLoad"
+                aria-hidden="true"
+                class="propeller-machine-title-skeleton inline-block h-[1em] w-48 max-w-full rounded bg-surface-hover align-middle animate-pulse"
+              />
+              <template v-else>{{ machineName }}</template>
             </span>
             <a
               v-else
@@ -78,12 +86,29 @@
         </ol>
       </nav>
 
-      <h1 class="propeller-grid-title mb-6 text-2xl font-semibold">{{ machineName }}</h1>
+      <h1 class="propeller-grid-title mb-6 text-2xl font-semibold">
+        <template v-if="firstLoad">
+          <span class="sr-only">{{ getMachineLabel('loading', 'Loading…') }}</span>
+          <span
+            aria-hidden="true"
+            class="propeller-machine-title-skeleton inline-block h-[1em] w-48 max-w-full rounded bg-surface-hover align-middle animate-pulse"
+          />
+        </template>
+        <template v-else>{{ machineName }}</template>
+      </h1>
 
       <!-- Child machines — their own section above the parts. A node with zero
            parts still shows its children. -->
       <div
-        v-if="childMachines.length > 0"
+        v-if="firstLoad"
+        aria-busy="true"
+        data-loading="true"
+        class="propeller-machine-children propeller-machine-children--loading mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <MachineCardSkeleton v-for="i in 4" :key="i" />
+      </div>
+      <div
+        v-else-if="childMachines.length > 0"
         class="propeller-machine-children mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
       >
         <template v-for="child in childMachines" :key="`machine-${child.id}`">
@@ -96,7 +121,7 @@
         </template>
       </div>
 
-      <div v-if="hasParts" class="flex flex-col gap-8 lg:flex-row">
+      <div v-if="showParts" class="flex flex-col gap-8 lg:flex-row">
         <GridFiltersPanel
           :filters="gridFilters"
           :priceMin="priceBoundsMin"
@@ -149,7 +174,7 @@
               :onSortChange="(field: string, order: string) => handleSortChange(field, order as 'ASC' | 'DESC')"
               :onOffsetChange="handleOffsetChange"
               :viewMode="viewMode"
-              :onViewChange="(mode: 'grid' | 'list') => (viewMode = mode)"
+              :onViewChange="changeViewMode"
               :onFilterRemove="handleFilterRemove"
               :onPriceFilterRemove="() => handlePriceRangeChange(undefined, undefined)"
               :onClearFilters="clearAllFilters"
@@ -186,6 +211,7 @@
               :products="{ page: currentPage, pages: totalPages }"
               :onPageChange="handlePageChange"
               :pageHref="pageHref"
+              :variant="paginationVariant ?? 'compact'"
               :labels="paginationLabels"
             />
           </div>
@@ -283,7 +309,7 @@ export interface MachineGridProps {
    * A slug resolves only in its own language, so a half-translated tree lists a
    * machine by its NL slug and then cannot open it with `language: 'EN'`. Pass
    * the shop's locales here; `machineLanguage` and the storefront `language`
-   * are always tried first (PWP-993).
+   * are always tried first.
    */
   machineLanguages?: string[];
 
@@ -295,6 +321,14 @@ export interface MachineGridProps {
    * renders anchors when it is supplied; the host owns the URL shape.
    */
   pageHref?: (page: number) => string;
+  /** Pager style for the parts list, as on `GridPagination`. Defaults to `'compact'`. */
+  paginationVariant?: 'compact' | 'full';
+
+  // ── View mode (parts) ────────────────────────────────────────────────────
+  /** View mode the parts list opens in. Defaults to `'list'`. */
+  defaultViewMode?: 'grid' | 'list';
+  /** Fired when the user switches view mode, so the host can remember it. */
+  onViewModeChange?: (mode: 'grid' | 'list') => void;
 
   // ── Infra (resolved via useInfraProps; explicit wins) ────────────────────
   graphqlClient?: GraphQLClient;
@@ -326,7 +360,7 @@ export interface MachineGridProps {
   /**
    * Custom card for the PARTS list, forwarded to the inner ProductGrid. Without
    * it the same product looked different depending on the page it was reached
-   * from (PWP-995c).
+   * from.
    */
   productCardComponent?: Component;
 
@@ -339,12 +373,12 @@ export interface MachineGridProps {
    * Keys read here: `loading`, `noMachines`, `machineNotFound`,
    * `quantityInMachine` and `searchParts`. The same object is passed to each
    * `MachineCard` as its `labels`, which reads `viewMachine` — so all six keys
-   * belong in it (PWP-995d).
+   * belong in it.
    *
    * `quantityInMachine` and `searchParts` used to be read from `toolbarLabels`,
    * which is forwarded verbatim to `GridToolbar`: a shop that translated its
    * toolbar dictionary properly still got "Qty in machine" and "Search parts…"
-   * in English, because those keys belong to no toolbar (PWP-995a). They are
+   * in English, because those keys belong to no toolbar. They are
    * still read from `toolbarLabels` as a fallback so existing hosts keep
    * working.
    */
@@ -356,7 +390,7 @@ export interface MachineGridProps {
    *
    * MachineGrid used to forward none of these and expose no way to reach them,
    * so a translated storefront rendered "In stock", "Add" and "Search parts…"
-   * in English in the middle of its own copy (PWP-995a).
+   * in English in the middle of its own copy.
    */
   productCardLabels?: Record<string, string>;
   addToCartLabels?: Record<string, string>;
@@ -370,7 +404,7 @@ export interface MachineGridProps {
 // Spelled out rather than left to `showStock ?? true` in the template: Vue casts
 // an ABSENT Boolean prop to `false`, not `undefined`, so `?? true` never fired
 // and the grid shipped with stock, prices and add-to-cart switched off unless
-// the host passed each one — while the React twin showed them (PWP-995).
+// the host passed each one — while the React twin showed them.
 const props = withDefaults(defineProps<MachineGridProps>(), {
   createCart: true,
   allowAddToCart: true,
@@ -381,7 +415,7 @@ const props = withDefaults(defineProps<MachineGridProps>(), {
 /**
  * The grid's own strings. `machineCardLabels` first, then `toolbarLabels` for
  * hosts that already put `quantityInMachine` / `searchParts` there, then
- * English (PWP-995a).
+ * English.
  */
 function getMachineLabel(key: string, fallback: string): string {
   return props.machineCardLabels?.[key] ?? props.toolbarLabels?.[key] ?? fallback;
@@ -399,7 +433,11 @@ const configuration = computed(
   () => (props.configuration ?? (infra.configuration as MachineGridProps['configuration']))
 );
 
-const viewMode = ref<'grid' | 'list'>('list');
+const viewMode = ref<'grid' | 'list'>(props.defaultViewMode ?? 'list');
+function changeViewMode(mode: 'grid' | 'list'): void {
+  viewMode.value = mode;
+  props.onViewModeChange?.(mode);
+}
 const clearSignal = ref(0);
 
 // Facets / bounds / the fetched node arrive from the parts hook.
@@ -407,7 +445,40 @@ const gridFilters = ref<AttributeFilter[]>([]) as import('vue').Ref<AttributeFil
 const priceBoundsMin = ref<number | undefined>();
 const priceBoundsMax = ref<number | undefined>();
 const itemsFound = ref(0);
-const machine = ref<SparePartsMachine | undefined>();
+// Tagged with its slug, so a previous machine's name never shows on the next one.
+const loadedMachine = ref<{ slug: string; machine: SparePartsMachine } | undefined>();
+const machine = computed(() =>
+  loadedMachine.value?.slug === currentSlug.value ? loadedMachine.value.machine : undefined
+);
+
+/** Most skeleton cards on the root page; more would not fit above the fold anyway. */
+const MAX_ROOT_SKELETONS = 8;
+
+/** Placeholder with the shape of a `MachineCard`, using ProductGrid's skeleton styling. */
+const MachineCardSkeleton: Component = defineComponent({
+  name: 'MachineCardSkeleton',
+  setup() {
+    const bar = (extra: string) =>
+      h('div', { class: `propeller-machine-card-skeleton__line rounded bg-surface-hover animate-pulse ${extra}` });
+    return () =>
+      h(
+        'div',
+        {
+          'aria-hidden': 'true',
+          class:
+            'propeller-machine-card-skeleton flex h-full flex-col overflow-hidden rounded-lg border border-border bg-background',
+        },
+        [
+          h('div', { class: 'propeller-machine-card-skeleton__image aspect-square w-full bg-surface-hover animate-pulse' }),
+          h('div', { class: 'flex flex-1 flex-col gap-2 p-4' }, [
+            bar('h-4 w-3/4'),
+            bar('h-3 w-1/2'),
+            bar('mt-auto h-10 w-full'),
+          ]),
+        ]
+      );
+  },
+});
 
 /** Title-case a URL slug for a breadcrumb ancestor (no fetched name available). */
 function slugToLabel(slug: string): string {
@@ -458,7 +529,7 @@ const { displayParts, childMachines, isLoading: partsLoading, currentPage, total
     pageSize: computed(() => props.listing.offset),
     // The composable takes the controlled page directly now. It used to own its
     // own counter, so the only way to drive it from URL state was the watcher
-    // below - undiscoverable unless you read this file (PWP-995b).
+    // below - undiscoverable unless you read this file.
     page: computed(() => props.listing.page),
     configuration: configuration.value,
     onFiltersChange: (f) => (gridFilters.value = f),
@@ -467,7 +538,7 @@ const { displayParts, childMachines, isLoading: partsLoading, currentPage, total
       priceBoundsMax.value = max;
     },
     onItemsFoundChange: (c) => (itemsFound.value = c),
-    onMachineChange: (m) => (machine.value = m),
+    onMachineChange: (m) => (loadedMachine.value = { slug: currentSlug.value, machine: m }),
   });
 
 // The parts hook owns its own page counter; feed the controlled URL page into
@@ -491,6 +562,15 @@ const quantityBySku = computed(() => {
 });
 
 const hasParts = computed(() => itemsFound.value > 0 || partProducts.value.length > 0);
+// First load of this machine: nothing of it is known yet.
+const firstLoad = computed(() => partsLoading.value && !machine.value && !notFound.value);
+// A filter or search with no hits keeps the controls, so the user can undo it.
+const hasActiveListing = computed(() => {
+  const l = props.listing;
+  return !!l.term || Object.keys(l.filters).length > 0 || l.minPrice !== undefined || l.maxPrice !== undefined;
+});
+const showParts = computed(() => hasParts.value || partsLoading.value || hasActiveListing.value);
+const rootSkeletonCount = computed(() => Math.min(props.sourceIds?.length ?? 0, MAX_ROOT_SKELETONS));
 
 const defaultSort = computed(() => [
   { field: props.listing.sortField as string, order: props.listing.sortOrder as string },
@@ -499,7 +579,7 @@ const defaultSort = computed(() => [
 // `undefined` when the machine has no slug in ANY language — it genuinely has
 // no URL, so the card renders unlinked rather than vanishing. getLocalizedValue
 // already falls back across languages; the queries feeding it no longer narrow
-// to one (PWP-993).
+// to one.
 function childSlugHref(child: SparePartsMachine): string | undefined {
   const slug = getLocalizedValue(child.slug, machineLanguage.value);
   return slug ? `${currentPath.value}/${slug}` : undefined;

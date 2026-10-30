@@ -189,7 +189,8 @@ export function useSpareParts(options: UseSparePartsOptions): UseSparePartsRetur
   const internalParts = ref<SparePart[]>([]) as Ref<SparePart[]>;
   const childMachines = ref<SparePartsMachine[]>([]) as Ref<SparePartsMachine[]>;
   const itemsFound = ref(0);
-  const internalLoading = ref(false);
+  // Start loading when a fetch will run, so the first render (SSR too) is not an empty state.
+  const internalLoading = ref(options.parts?.value === undefined && !!graphqlClient && !!slugRef.value);
   const internalPage = ref(1);
   // Controlled when `options.page` is given, mirroring `options.parts`.
   const currentPage = computed(() => options.page?.value ?? internalPage.value);

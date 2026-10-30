@@ -8,7 +8,7 @@ nested components without forking the package.
 Pass a partner-built component into a `*-component` prop on any host. The
 host renders your component in place of the default. The component must
 implement the documented contract (TypeScript interface in
-`propeller-v2-core-ui`).
+`@propeller-commerce/propeller-v2-core-ui`).
 
 ### Hosts and their injection slots
 
@@ -71,7 +71,7 @@ consumers can be affected. Switch:
 
 ```vue
 <script setup lang="ts">
-import { ProductGrid } from 'propeller-v2-vue-ui';
+import { ProductGrid } from '@propeller-commerce/propeller-v2-vue-ui';
 import MyPrice from './MyPrice.vue';
 </script>
 
@@ -84,7 +84,7 @@ Where `MyPrice.vue` accepts `PriceComponentProps`:
 
 ```vue
 <script setup lang="ts">
-import type { PriceComponentProps } from 'propeller-v2-vue-ui';
+import type { PriceComponentProps } from '@propeller-commerce/propeller-v2-vue-ui';
 const props = defineProps<PriceComponentProps>();
 </script>
 
@@ -104,8 +104,8 @@ Import the `Default*` component and wrap it instead of rebuilding from scratch:
 
 ```vue
 <script setup lang="ts">
-import { DefaultProductPrice } from 'propeller-v2-vue-ui';
-import type { PriceComponentProps } from 'propeller-v2-vue-ui';
+import { DefaultProductPrice } from '@propeller-commerce/propeller-v2-vue-ui';
+import type { PriceComponentProps } from '@propeller-commerce/propeller-v2-vue-ui';
 import PromoBadge from './PromoBadge.vue';
 const props = defineProps<PriceComponentProps>();
 </script>
@@ -123,7 +123,7 @@ const props = defineProps<PriceComponentProps>();
 ```vue
 <!-- MyCard.vue -->
 <script setup lang="ts">
-import { useProductGridConfig } from 'propeller-v2-vue-ui';
+import { useProductGridConfig } from '@propeller-commerce/propeller-v2-vue-ui';
 import type { Product } from '@propeller-commerce/propeller-sdk-v2';
 
 const props = defineProps<{ product: Product }>();
@@ -144,7 +144,7 @@ const PriceComp = grid?.priceComponent;
 
 ```vue
 <script setup lang="ts">
-import { ProductGrid } from 'propeller-v2-vue-ui';
+import { ProductGrid } from '@propeller-commerce/propeller-v2-vue-ui';
 import MyCard from './MyCard.vue';
 </script>
 
@@ -376,7 +376,7 @@ that lets the consumer replace each row.
 ```vue
 <!-- DrawerCartItem.vue -->
 <script setup lang="ts">
-import { CartItem } from 'propeller-v2-vue-ui';
+import { CartItem } from '@propeller-commerce/propeller-v2-vue-ui';
 import MyCustomDetails from './MyCustomDetails.vue';
 const props = defineProps<{ cartItem: any }>();
 </script>
@@ -499,7 +499,7 @@ plus pre-existing `showTitle` and `showSku`.
 
 ## Contract types
 
-All slot contracts live in `propeller-v2-core-ui`:
+All slot contracts live in `@propeller-commerce/propeller-v2-core-ui`:
 
 - `PriceComponentProps`
 - `StockComponentProps`
@@ -514,12 +514,12 @@ All slot contracts live in `propeller-v2-core-ui`:
 Import directly:
 
 ```ts
-import type { PriceComponentProps } from 'propeller-v2-vue-ui';
+import type { PriceComponentProps } from '@propeller-commerce/propeller-v2-vue-ui';
 // or
-import type { PriceComponentProps } from 'propeller-v2-core-ui';
+import type { PriceComponentProps } from '@propeller-commerce/propeller-v2-core-ui';
 ```
 
-(`propeller-v2-vue-ui` re-exports them from `propeller-v2-core-ui` for
+(`@propeller-commerce/propeller-v2-vue-ui` re-exports them from `@propeller-commerce/propeller-v2-core-ui` for
 convenience.)
 
 ## Default sub-component exports

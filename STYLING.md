@@ -6,7 +6,7 @@ those utilities resolve against. Consumers import it once:
 
 ```ts
 // main.ts (or your app entry)
-import 'propeller-v2-vue-ui/styles.css';
+import '@propeller-commerce/propeller-v2-vue-ui/styles.css';
 ```
 
 If you don't want default styling at all, skip the import — every component
@@ -14,7 +14,7 @@ will render unstyled (Tailwind classes resolve to nothing) and you'll be on
 your own.
 
 The token names and BEM hook class names are **identical** to
-`propeller-v2-react-ui`. A project running both frameworks can share a
+`@propeller-commerce/propeller-v2-react-ui`. A project running both frameworks can share a
 single stylesheet of overrides.
 
 ## Three override surfaces

@@ -4,142 +4,198 @@ title: Component reference
 
 # Component reference
 
-The package exports 60 components. This page is the catalogue; for the
-**live preview and the auto-generated prop table** of any component, open
-it in [Storybook](/storybook) — every component has a story, and the
-Storybook "Docs" tab renders its full `*Props` interface from the
-TypeScript source.
+The package exports 74 components (plus the three default sub-components
+under `components/defaults`). This page is the catalogue; every component name
+links to its **props page** — each prop with its type, whether it is required,
+its default and its description, plus the component's events and slots. The
+full list is on [Component props](/api/components).
 
-:::note Why the prop tables live in Storybook
-The components are Vue Single-File Components (`.vue`). The generated
-[API reference](/api) is produced by TypeDoc, which cannot parse SFCs — so
-it documents the package's *headless* surface (composables, the provider,
-the SDK seam, utilities and types) and **not** the component props. Each
-component's props are documented in Storybook instead.
+:::note Where the props pages come from
+The components are Vue Single-File Components (`.vue`), which TypeDoc cannot
+parse, so the [API reference](/api) covers the *headless* surface (composables,
+the provider, the SDK seam, utilities and types). The component props pages are
+generated from the SFC source with `vue-component-meta` on every docs build.
 :::
 
-Components that need infrastructure (the SDK services, the current user)
-resolve it from the Propeller provider (`providePropeller`) — see
-[Getting started](/getting-started). For how the composables behind these
-components reach the GraphQL backend, see the
+Components that need infrastructure resolve it from the Propeller provider.
+Install the `propellerVue` plugin once at startup with the app-wide
+dependencies, then wrap the app in `<PropellerProvider>` with the per-scope
+state:
+
+```ts
+import { propellerVue } from '@propeller-commerce/propeller-v2-vue-ui';
+
+app.use(propellerVue, { graphqlClient, services, currency, configuration });
+```
+
+```vue
+<PropellerProvider
+  :user="user"
+  :is-authenticated="isAuthenticated"
+  :company-id="companyId"
+  :language="language"
+  :include-tax="includeTax"
+  :portal-mode="portalMode"
+>
+  <router-view />
+</PropellerProvider>
+```
+
+See [Getting started](/getting-started) and the
+[PropellerProvider props](/api/components/PropellerProvider). For how the
+composables behind these components reach the GraphQL backend, see the
 [API integration guides](/guides/api/overview).
 
 ## Product
 
 | Component | What it renders |
 | --- | --- |
-| `ProductCard` | Full product card — image, badges, name, SKU, price, favourite, embedded AddToCart |
-| `ProductGrid` | Responsive product/cluster grid with internal fetching, skeleton, empty state, pagination |
-| `ProductInfo` | Product headline block — name, SKU, price, stock, short description |
-| `ProductPrice` | Price display — gross/net, discounts, tax-inclusive toggle |
-| `ProductBulkPrices` | Quantity-tiered price table |
-| `ProductGallery` | Image gallery — main image, thumbnails, zoom, lightbox |
-| `ProductTabs` | Tab bar wrapping description / specs / downloads / videos |
-| `ProductDescription` | Long description, with collapse/expand |
-| `ProductShortDescription` | One-line summary |
-| `ProductSpecifications` | Attribute/spec table |
-| `ProductDownloads` | Downloadable documents |
-| `ProductVideos` | Embedded videos |
-| `ProductSlider` | Horizontal product carousel (cross-sells, related) |
-| `ProductBundles` | Bundle offers for a product |
-| `AddToCart` | Quantity stepper + add button |
-| `AddToFavorite` | Favourite toggle with a list-picker modal |
-| `ItemStock` | Stock-availability badge |
+| [`ProductCard`](/api/components/ProductCard) | Full product card — image, badges, name, SKU, price, favourite, embedded AddToCart |
+| [`ProductGrid`](/api/components/ProductGrid) | Responsive product/cluster grid with internal fetching, skeleton, empty state, pagination |
+| [`ProductInfo`](/api/components/ProductInfo) | Product headline block — name, SKU, price, stock, short description |
+| [`ProductPrice`](/api/components/ProductPrice) | Price display — gross/net, discounts, tax-inclusive toggle |
+| [`ProductBulkPrices`](/api/components/ProductBulkPrices) | Quantity-tiered price table |
+| [`ProductGallery`](/api/components/ProductGallery) | Image gallery — main image, thumbnails, zoom, lightbox |
+| [`ProductTabs`](/api/components/ProductTabs) | Tab bar wrapping description / specs / downloads / videos |
+| [`ProductDescription`](/api/components/ProductDescription) | Long description, with collapse/expand |
+| [`ProductShortDescription`](/api/components/ProductShortDescription) | One-line summary |
+| [`ProductSpecifications`](/api/components/ProductSpecifications) | Attribute/spec table |
+| [`ProductDownloads`](/api/components/ProductDownloads) | Downloadable documents |
+| [`ProductVideos`](/api/components/ProductVideos) | Embedded videos |
+| [`ProductSlider`](/api/components/ProductSlider) | Horizontal product carousel (cross-sells, related) |
+| [`ProductBundles`](/api/components/ProductBundles) | Bundle offers for a product |
+| [`AddToCart`](/api/components/AddToCart) | Quantity stepper + add button |
+| [`AddToFavorite`](/api/components/AddToFavorite) | Favourite toggle with a list-picker modal |
+| [`ItemStock`](/api/components/ItemStock) | Stock-availability badge |
+| [`RequestPriceButton`](/api/components/RequestPriceButton) | Request-a-price button for price-on-request products |
+| [`LoginToOrderButton`](/api/components/LoginToOrderButton) | Login prompt shown in place of add-to-cart for anonymous visitors |
 
 ## Cluster
 
 | Component | What it renders |
 | --- | --- |
-| `ClusterCard` | Product-cluster card |
-| `ClusterInfo` | Cluster headline info |
-| `ClusterOptions` | Selectable option groups |
-| `ClusterConfigurator` | Configuration picker narrowing candidate products |
+| [`ClusterCard`](/api/components/ClusterCard) | Product-cluster card |
+| [`ClusterInfo`](/api/components/ClusterInfo) | Cluster headline info |
+| [`ClusterOptions`](/api/components/ClusterOptions) | Selectable option groups |
+| [`ClusterConfigurator`](/api/components/ClusterConfigurator) | Configuration picker narrowing candidate products |
 
 ## Grid
 
 | Component | What it renders |
 | --- | --- |
-| `GridTitle` | Category / search heading |
-| `GridToolbar` | Sort, per-page, view-toggle, active-filter badges |
-| `GridFilters` | Accordion filter sidebar — price slider + attribute facets |
-| `GridPagination` | Pagination bar (compact or full) |
+| [`GridTitle`](/api/components/GridTitle) | Category / search heading |
+| [`GridToolbar`](/api/components/GridToolbar) | Sort, per-page, view-toggle, active-filter badges |
+| [`GridFilters`](/api/components/GridFilters) | Accordion filter sidebar — price slider + attribute facets |
+| [`GridFiltersPanel`](/api/components/GridFiltersPanel) | GridFilters wrapped in a mobile slide-out panel with an active-filter badge |
+| [`GridPagination`](/api/components/GridPagination) | Pagination bar (compact or full) |
 
 ## Cart & checkout
 
 | Component | What it renders |
 | --- | --- |
-| `CartOverview` | Full editable cart |
-| `CartItem` | One cart line — image, qty stepper, total, remove |
-| `CartSummary` | Cart totals panel + checkout/quote actions |
-| `CartIconAndSidebar` | Header cart icon + slide-out sidebar |
-| `ItemsOverview` | Read-only cart line list (review / confirmation) |
-| `ActionCode` | Promo/action-code apply + remove |
-| `CartPaymethods` | Payment-method tiles |
-| `CartCarriers` | Shipping-carrier tiles |
-| `DeliveryDate` | Expected delivery date, optional date picker |
+| [`CartOverview`](/api/components/CartOverview) | Full editable cart |
+| [`CartItem`](/api/components/CartItem) | One cart line — image, qty stepper, total, remove |
+| [`CartSummary`](/api/components/CartSummary) | Cart totals panel + checkout/quote actions |
+| [`CartIconAndSidebar`](/api/components/CartIconAndSidebar) | Header cart icon + slide-out sidebar |
+| [`ItemsOverview`](/api/components/ItemsOverview) | Read-only cart line list (review / confirmation) |
+| [`CartBonusItems`](/api/components/CartBonusItems) | Bonus (free) items attached to the cart |
+| [`ActionCode`](/api/components/ActionCode) | Promo/action-code apply + remove |
+| [`CartPaymethods`](/api/components/CartPaymethods) | Payment-method tiles |
+| [`CartCarriers`](/api/components/CartCarriers) | Shipping-carrier tiles |
+| [`DeliveryDate`](/api/components/DeliveryDate) | Expected delivery date, optional date picker |
 
 ## Address
 
 | Component | What it renders |
 | --- | --- |
-| `AddressCard` | A single address, with per-field show/hide |
-| `AddressSelector` | Modal address picker for logged-in users |
+| [`AddressCard`](/api/components/AddressCard) | A single address, with per-field show/hide |
+| [`AddressSelector`](/api/components/AddressSelector) | Modal address picker for logged-in users |
 
 ## Order & quote
 
 | Component | What it renders |
 | --- | --- |
-| `OrderList` | Paginated order table with search/filter |
-| `OrderSummary` | Order headline facts |
-| `OrderItemCard` | One order line |
-| `OrderTotals` | Order totals block |
-| `OrderShipments` | Shipment / tracking info |
-| `OrderActions` | Per-order actions (PDF, re-order) |
-| `QuoteActions` | Accept-quotation button + T&C checkbox |
+| [`OrderList`](/api/components/OrderList) | Paginated order table with search/filter |
+| [`OrderSummary`](/api/components/OrderSummary) | Order headline facts |
+| [`OrderItemCard`](/api/components/OrderItemCard) | One order line |
+| [`OrderTotals`](/api/components/OrderTotals) | Order totals block |
+| [`OrderBonusItems`](/api/components/OrderBonusItems) | Bonus (free) items on an order |
+| [`OrderShipments`](/api/components/OrderShipments) | Shipment / tracking info |
+| [`OrderActions`](/api/components/OrderActions) | Per-order actions (PDF, re-order) |
+| [`QuoteActions`](/api/components/QuoteActions) | Accept-quotation button + T&C checkbox |
 
 ## Account & auth
 
 | Component | What it renders |
 | --- | --- |
-| `AccountIconAndMenu` | Header account control / account-page sidebar |
-| `CompanySwitcher` | Active-company switcher for multi-company contacts |
-| `UserDetails` | User profile block |
-| `LoginForm` | Email/password sign-in |
-| `RegisterForm` | Account registration |
-| `ForgotPassword` | Password-reset request |
+| [`AccountIconAndMenu`](/api/components/AccountIconAndMenu) | Header account control / account-page sidebar |
+| [`CompanySwitcher`](/api/components/CompanySwitcher) | Active-company switcher for multi-company contacts |
+| [`UserDetails`](/api/components/UserDetails) | User profile block |
+| [`LoginForm`](/api/components/LoginForm) | Email/password sign-in |
+| [`RegisterForm`](/api/components/RegisterForm) | Account registration |
+| [`ForgotPassword`](/api/components/ForgotPassword) | Password-reset request |
 
 ## Favourites
 
 | Component | What it renders |
 | --- | --- |
-| `FavoriteLists` | The user's favourite lists |
-| `FavoriteListItem` | One row of a favourites list |
-| `FavoriteListDetails` | The contents of one favourite list |
+| [`FavoriteLists`](/api/components/FavoriteLists) | The user's favourite lists |
+| [`FavoriteListItem`](/api/components/FavoriteListItem) | One row of a favourites list |
+| [`FavoriteListDetails`](/api/components/FavoriteListDetails) | The contents of one favourite list |
 
 ## Navigation
 
 | Component | What it renders |
 | --- | --- |
-| `Menu` | Category navigation tree |
-| `SearchBar` | Product search with type-ahead results |
-| `Breadcrumbs` | Category trail |
+| [`Menu`](/api/components/Menu) | Category navigation tree |
+| [`SearchBar`](/api/components/SearchBar) | Product search with type-ahead results |
+| [`Breadcrumbs`](/api/components/Breadcrumbs) | Category trail |
 
 ## Purchase authorization (B2B)
 
 | Component | What it renders |
 | --- | --- |
-| `PurchaseAuthorizationConfigurator` | Manage a company's PA rules |
-| `PurchaseAuthorizationRequests` | Carts awaiting authorization |
+| [`PurchaseAuthorizationConfigurator`](/api/components/PurchaseAuthorizationConfigurator) | Manage a company's PA rules |
+| [`PurchaseAuthorizationRequests`](/api/components/PurchaseAuthorizationRequests) | Carts awaiting authorization |
 
 ## Category
 
 | Component | What it renders |
 | --- | --- |
-| `CategoryDescription` | Category long description, with collapse |
-| `CategoryShortDescription` | Category short description |
+| [`CategoryDescription`](/api/components/CategoryDescription) | Category long description, with collapse |
+| [`CategoryShortDescription`](/api/components/CategoryShortDescription) | Category short description |
 
 ## Display helper
 
 | Component | What it renders |
 | --- | --- |
-| `PriceToggle` | Incl./excl. VAT switch (uncontrolled — reports via callback) |
+| [`PriceToggle`](/api/components/PriceToggle) | Incl./excl. VAT switch (uncontrolled — reports via callback) |
+| [`PropellerImg`](/api/components/PropellerImg) | The package's single image element; swappable for a framework image component |
+
+## Spare parts & machines
+
+| Component | What it renders |
+| --- | --- |
+| [`MachineGrid`](/api/components/MachineGrid) | Spare-parts machine tree — machine cards at the root, the parts list on a leaf |
+| [`MachineCard`](/api/components/MachineCard) | One machine node as a card linking one level deeper |
+
+## Quick order & price requests
+
+| Component | What it renders |
+| --- | --- |
+| [`QuickOrder`](/api/components/QuickOrder) | Bulk add-to-cart by SKU and quantity, with spreadsheet upload |
+| [`PriceRequestList`](/api/components/PriceRequestList) | Products collected for a price request, with quantities |
+
+## SEO (structured data)
+
+| Component | What it renders |
+| --- | --- |
+| [`ProductJsonLd`](/api/components/ProductJsonLd) | schema.org Product JSON-LD for a product page |
+| [`ClusterJsonLd`](/api/components/ClusterJsonLd) | schema.org JSON-LD for a cluster page |
+| [`ItemListJsonLd`](/api/components/ItemListJsonLd) | schema.org ItemList JSON-LD for a listing page |
+
+## Provider
+
+| Component | What it renders |
+| --- | --- |
+| [`PropellerProvider`](/api/components/PropellerProvider) | Per-scope state (user, company, language, VAT mode, portal mode) for the components below it |
