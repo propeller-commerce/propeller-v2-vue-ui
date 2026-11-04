@@ -550,7 +550,7 @@
             </div>
           </template>
         </div>
-        <div class="space-y-4">
+        <div v-if="showPassword" class="space-y-4">
           <h3 class="text-lg font-semibold border-b pb-2">
             {{ passwordTitle }}
           </h3>
@@ -738,6 +738,20 @@ import type { RegisterContactInput, RegisterCustomerInput } from '../composables
  automaticLogin?: boolean;
 
  /**
+  * When false the password fields are left out and the account is created
+  * without a password; the user sets one later via a password-reset link.
+  * Registration then never logs in, whatever `automaticLogin` says.
+  * @default true
+  */
+ showPassword?: boolean;
+
+ /**
+  * When false no welcome email is sent after registration.
+  * @default true
+  */
+ sendWelcomeEmail?: boolean;
+
+ /**
   * Labels for the registration form fields.
   *
   * Available keys:
@@ -786,6 +800,8 @@ import type { RegisterContactInput, RegisterCustomerInput } from '../composables
 }
 const props = withDefaults(defineProps<RegisterFormProps>(), {
   automaticLogin: true,
+  showPassword: true,
+  sendWelcomeEmail: true,
   displayLoginLink: true,
 });
 const firstName = ref('');
@@ -974,7 +990,7 @@ async function handleSubmit(e: Event | any) {
     error.value = selectUserTypeText.value;
     return;
   }
-  if (password.value !== confirmPassword.value) {
+  if (props.showPassword && password.value !== confirmPassword.value) {
     error.value = passwordMismatchText.value;
     return;
   }
@@ -985,7 +1001,7 @@ async function handleSubmit(e: Event | any) {
 
   const input = {
     email: email.value,
-    password: password.value,
+    ...(props.showPassword && { password: password.value }),
     firstName: firstName.value,
     middleName: middleName.value,
     lastName: lastName.value,
@@ -1009,10 +1025,11 @@ async function handleSubmit(e: Event | any) {
     sameDeliveryAsBilling: sameAsDelivery.value,
   };
 
-  const autoLogin = props.automaticLogin !== false;
+  const autoLogin = props.automaticLogin !== false && props.showPassword;
+  const sendWelcomeEmail = props.sendWelcomeEmail !== false;
   const result = isContact.value
-    ? await registerContact(input as RegisterContactInput, props.preferredLanguage, autoLogin)
-    : await registerCustomer(input as RegisterCustomerInput, props.preferredLanguage, autoLogin);
+    ? await registerContact(input as RegisterContactInput, props.preferredLanguage, autoLogin, sendWelcomeEmail)
+    : await registerCustomer(input as RegisterCustomerInput, props.preferredLanguage, autoLogin, sendWelcomeEmail);
 
   if (result.ok) {
     submitted.value = true;
