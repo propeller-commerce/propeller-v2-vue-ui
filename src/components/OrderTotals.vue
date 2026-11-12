@@ -71,6 +71,7 @@ import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatVatRate, vatRate } from '../composables/shared/utils/vatRate';
 import { useInfraProps } from '../composables/vue/useInfraProps';
+import { orderSubtotals } from '../composables/shared/utils/orderSubtotals';
 
 export interface OrderTotalsProps {
   /** The order/quote used to populate the summary data */
@@ -161,9 +162,8 @@ const showTotalExclVat = computed(() => {
 const showTotalVat = computed(() => {
   return props.showTotalVat !== undefined ? props.showTotalVat : true;
 });
-const subtotal = computed(() => {
-  return (props.order as any)?.total?.gross || 0;
-});
+const subtotals = computed(() => orderSubtotals(props.order));
+const subtotal = computed(() => subtotals.value.subtotal);
 const hasDiscount = computed(() => {
   const total = (props.order as any)?.total;
   return (
@@ -183,10 +183,7 @@ const discountDisplay = computed(() => {
   }
   return '-' + formatItemPrice(total.discountValue);
 });
-const subtotalWithDiscount = computed(() => {
-  const total = (props.order as any)?.total;
-  return (total?.gross || 0) - (total?.discountValue || 0);
-});
+const subtotalWithDiscount = computed(() => subtotals.value.subtotalWithDiscount);
 const hasTransactionCosts = computed(() => {
   return (props.order as any)?.paymentData?.gross > 0;
 });
