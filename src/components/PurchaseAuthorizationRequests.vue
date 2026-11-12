@@ -266,12 +266,12 @@
                     </div>
                     <div
                       v-for="(tax, index) in (selectedCart?.taxLevels ?? []).filter(
-                        (t) => t.taxPercentage > 0 && t.price > 0,
+                        (t) => vatRate(t) > 0 && t.price > 0,
                       )"
                       :key="index"
                       class="flex justify-between text-muted-foreground"
                     >
-                      <span>{{ tax.taxPercentage }}% {{ getLabel("vat", "VAT") }}:</span
+                      <span>{{ formatVatRate(vatRate(tax), infra.language) }}% {{ getLabel("vat", "VAT") }}:</span
                       ><span>{{ formatPrice(Number(tax.price)) }}</span>
                     </div>
                     <div class="flex justify-between text-muted-foreground">
@@ -403,6 +403,7 @@ import { useInfraProps } from "../composables/vue/useInfraProps";
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { formatVatRate, vatRate } from '../composables/shared/utils/vatRate';
 import { getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
 
 import {
@@ -612,6 +613,6 @@ function formatDate(dateStr: string): string {
 function formatPrice(price: number): string {
   if (props.formatPrice) return props.formatPrice(price);
   if (!price) return "-";
-  return _formatPrice(price, { symbol: props.currency ?? "€", locale: localeForLanguage(props.language) });
+  return _formatPrice(price, { symbol: infra.currency ?? "€", locale: localeForLanguage(infra.language) });
 }
 </script>

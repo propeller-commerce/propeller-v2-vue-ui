@@ -42,7 +42,7 @@
     <template v-if="showVATs && taxPercentages.length > 0">
       <template :key="index" v-for="(tax, index) in taxPercentages">
         <div class="propeller-order-totals__row flex justify-between text-muted-foreground text-sm" data-row="vat-line">
-          <span class="propeller-order-totals__label">{{ tax.percentage }}% {{ getLabel('vat', 'VAT') }}:</span
+          <span class="propeller-order-totals__label">{{ formatVatRate(vatRate(tax), infra.language) }}% {{ getLabel('vat', 'VAT') }}:</span
           ><span class="propeller-order-totals__value">{{ formatItemPrice(Number(tax.total)) }}</span>
         </div>
       </template>
@@ -69,6 +69,7 @@ import { Order, OrderDiscountType } from '@propeller-commerce/propeller-sdk-v2';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { formatVatRate, vatRate } from '../composables/shared/utils/vatRate';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface OrderTotalsProps {
@@ -203,7 +204,7 @@ const totalExclVat = computed(() => {
 });
 const taxPercentages = computed(() => {
   const taxes = (props.order as any)?.total?.taxPercentages || [];
-  return taxes.filter((tax: any) => tax.percentage > 0 && tax.total > 0);
+  return taxes.filter((tax: any) => vatRate(tax) > 0 && tax.total > 0);
 });
 const totalInclVat = computed(() => {
   return (props.order as any)?.total?.net || 0;

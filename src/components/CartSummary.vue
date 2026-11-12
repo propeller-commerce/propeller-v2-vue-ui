@@ -41,7 +41,7 @@
     <template v-if="showVATs && taxLevels.length > 0">
       <template :key="index" v-for="(tax, index) in taxLevels">
         <div class="propeller-cart-summary__row flex justify-between text-muted-foreground text-sm" data-row="vat-line">
-          <span class="propeller-cart-summary__label">{{ tax.taxPercentage }}% {{ getLabel('vat', 'VAT') }}:</span
+          <span class="propeller-cart-summary__label">{{ formatVatRate(vatRate(tax), infra.language) }}% {{ getLabel('vat', 'VAT') }}:</span
           ><span class="propeller-cart-summary__value">{{ formatItemPrice(Number(tax.price)) }}</span>
         </div>
       </template>
@@ -105,6 +105,7 @@ import { useCart } from '../composables/vue/useCart';
 import { getLabel as _getLabel, isOverAuthorizationLimit } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
+import { formatVatRate, vatRate } from '../composables/shared/utils/vatRate';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface CartSummaryProps {
@@ -284,7 +285,7 @@ const totalExclVat = computed(() => {
 });
 const taxLevels = computed(() => {
   const levels = props.cart?.taxLevels || [];
-  return levels.filter((t) => t.taxPercentage > 0 && t.price > 0);
+  return levels.filter((t) => vatRate(t) > 0 && t.price > 0);
 });
 const totalVat = computed(() => {
   const net = props.cart?.total?.totalNet || 0;
