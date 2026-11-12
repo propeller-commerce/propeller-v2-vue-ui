@@ -75,7 +75,7 @@
             <component
               :is="ProductDescriptionImpl"
               :product="product"
-              :language="language"
+              :language="infra.language"
               :collapsed="descriptionCollapsed"
               :maxLength="descriptionMaxLength"
               :labels="labels"
@@ -87,7 +87,7 @@
               <component
                 :is="ProductSpecificationsImpl"
                 :attributes="getSpecsAttributes()"
-                :language="language"
+                :language="infra.language"
                 :layout="specificationsLayout"
                 :grouping="specificationsGrouping"
                 :package-description="specificationsPackageDescription"
@@ -106,7 +106,7 @@
             <component
               :is="ProductDownloadsImpl"
               :downloads="product.media?.documents"
-              :language="language || 'NL'"
+              :language="infra.language || 'NL'"
               :labels="downloadsLabels"
             ></component>
           </template>
@@ -115,7 +115,7 @@
             <component
               :is="ProductVideosImpl"
               :videos="product.media?.videos"
-              :language="language || 'NL'"
+              :language="infra.language || 'NL'"
               :labels="videosLabels"
             ></component>
           </template>
@@ -154,7 +154,7 @@
                 <component
                   :is="ProductDescriptionImpl"
                   :product="product"
-                  :language="language"
+                  :language="infra.language"
                   :collapsed="descriptionCollapsed"
                   :maxLength="descriptionMaxLength"
                   :labels="labels"
@@ -201,7 +201,7 @@
                 <component
                   :is="ProductSpecificationsImpl"
                   :attributes="getSpecsAttributes()"
-                  :language="language"
+                  :language="infra.language"
                   :layout="specificationsLayout"
                   :grouping="specificationsGrouping"
                   :package-description="specificationsPackageDescription"
@@ -250,7 +250,7 @@
                 <component
                   :is="ProductDownloadsImpl"
                   :downloads="product.media?.documents"
-                  :language="language || 'NL'"
+                  :language="infra.language || 'NL'"
                   :labels="downloadsLabels"
                 ></component>
               </div>
@@ -290,7 +290,7 @@
                 <component
                   :is="ProductVideosImpl"
                   :videos="product.media?.videos"
-                  :language="language || 'NL'"
+                  :language="infra.language || 'NL'"
                   :labels="videosLabels"
                 ></component>
               </div>
@@ -319,6 +319,7 @@ import DefaultProductVideos from './ProductVideos.vue';
 import { useProductSpecs } from '../composables/vue/useProductSpecs';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface ProductTabsProps {
   /** Product for which to display the information. */
@@ -457,13 +458,15 @@ const ProductVideosImpl = computed(() => props.productVideosComponent ?? Default
 const activeTab = ref<ProductTabsState['activeTab']>('description');
 const specsVisited = ref<ProductTabsState['specsVisited']>(false);
 
+// graphqlClient + language fall back to the provider when the page omits them.
+const infra = useInfraProps(props);
 const { attributes: fetchedAttributes, fetchSpecs } = useProductSpecs({
-  graphqlClient: props.graphqlClient as GraphQLClient,
-  language: computed(() => props.language || 'NL'),
+  graphqlClient: infra.graphqlClient as GraphQLClient,
+  language: computed(() => infra.language || 'NL'),
 });
 
 const hasDescription = computed(() => {
-  return !!getLanguageString(props.product?.descriptions, props.language || 'NL', '');
+  return !!getLanguageString(props.product?.descriptions, infra.language || 'NL', '');
 });
 
 // A tab whose panel would only say "No downloads" is noise, so downloads and
@@ -488,7 +491,7 @@ onMounted(() => {
 });
 
 watch(
-  () => [props.product, props.language],
+  () => [props.product, infra.language],
   () => {
     // Re-evaluate first visible tab when product data or language changes.
     // If the description is missing in the new language, fall back to specs.

@@ -685,6 +685,7 @@ import type { Cart, Contact, Customer, GraphQLClient } from '@propeller-commerce
 import { Gender } from '@propeller-commerce/propeller-sdk-v2';
 import { useAuth } from '../composables/vue/useAuth';
 import type { RegisterContactInput, RegisterCustomerInput } from '../composables/vue/useAuth';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 
 
 
@@ -831,8 +832,9 @@ const deliveryCountry = ref('');
 const selectedUserType = ref<'' | 'Contact' | 'Customer'>('');
 const submitted = ref(false);
 
+const infra = useInfraProps(props);
 const { loading, error, registerContact, registerCustomer } = useAuth({
-  graphqlClient: props.graphqlClient!,
+  graphqlClient: infra.graphqlClient as GraphQLClient,
   language: props.preferredLanguage || 'NL',
 });
 

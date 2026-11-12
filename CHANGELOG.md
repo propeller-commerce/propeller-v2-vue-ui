@@ -8,6 +8,21 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.33.3] - 2026-11-12
+
+### Fixed
+
+- **Five components now take their infra from the provider, as in react-ui
+  (PWP-971).** `ForgotPassword`, `RegisterForm` and `ProductTabs` built their
+  services from the `graphqlClient` prop only, `Breadcrumbs` read `language`
+  and `configuration` from its props only, and the `CartSummary` quote button
+  checked the `user` prop only. Pages that leave those props out (propeller-vue
+  and propeller-nuxt do) got a password reset and a registration that failed
+  before any request, an empty specifications tab, English breadcrumbs that
+  linked to Dutch 404s, and no quote button for a Contact. They now resolve
+  through `useInfraProps`: an explicit prop still wins, otherwise the
+  provider's value.
+
 ## [0.33.2] - 2026-11-12
 
 ### Fixed

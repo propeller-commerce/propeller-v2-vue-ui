@@ -67,7 +67,7 @@
         {{ getLabel('checkoutButton', 'Continue to Checkout') }}
       </button>
 
-      <template v-if="!!onRequestQuoteClick && !!user && 'contactId' in user">
+      <template v-if="!!onRequestQuoteClick && !!infra.user && 'contactId' in infra.user">
         <button
           type="button"
           class="propeller-cart-summary__quote-btn block w-full bg-card border border-secondary text-secondary text-center py-3 rounded-[var(--radius-container)] hover:bg-secondary/5 transition font-semibold mt-2"

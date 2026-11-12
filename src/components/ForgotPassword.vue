@@ -102,6 +102,7 @@
 import { computed, ref } from 'vue';
 import type { GraphQLClient } from '@propeller-commerce/propeller-sdk-v2';
 import { useAuth } from '../composables/vue/useAuth';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface ForgotPasswordProps {
   /** GraphQL client for the Propeller SDK. Resolved from PropellerProvider when omitted. */
@@ -144,11 +145,12 @@ export interface ForgotPasswordProps {
 }
 
 const props = defineProps<ForgotPasswordProps>();
+const infra = useInfraProps(props);
 const email = ref('');
 const submitted = ref(false);
 
 const { loading, error, forgotPassword } = useAuth({
-  graphqlClient: props.graphqlClient!,
+  graphqlClient: infra.graphqlClient as GraphQLClient,
 });
 
 

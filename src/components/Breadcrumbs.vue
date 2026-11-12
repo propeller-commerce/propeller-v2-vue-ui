@@ -70,6 +70,7 @@
 import { Category, LocalizedString } from '@propeller-commerce/propeller-sdk-v2';
 import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
 import { getLanguageString, getLanguageUri } from '@propeller-commerce/propeller-v2-core-ui';
+import { useInfraProps } from '../composables/vue/useInfraProps';
 
 export interface BreadcrumbsProps {
   /**
@@ -160,10 +161,12 @@ const props = withDefaults(defineProps<BreadcrumbsProps>(), {
   showHome: true,
   showCurrent: true,
 });
+// language + configuration fall back to the provider when the page omits them.
+const infra = useInfraProps(props);
 
 function getItems(): ReturnType<BreadcrumbsState['getItems']> {
   const path = (props.categoryPath as Category[]) || [];
-  const baseId = props.configuration?.baseCategoryId;
+  const baseId = infra.configuration?.baseCategoryId;
   const filtered = baseId
     ? path.filter((cat: Category) => cat.categoryId !== baseId)
     : path;
@@ -184,10 +187,10 @@ function getDisplayItems(): ReturnType<BreadcrumbsState['getDisplayItems']> {
   return items;
 }
 function getCategoryName(cat: Category): ReturnType<BreadcrumbsState['getCategoryName']> {
-  return getLanguageString(cat.names, props.language || 'NL', '');
+  return getLanguageString(cat.names, infra.language || 'NL', '');
 }
 function getCategorySlug(cat: Category): ReturnType<BreadcrumbsState['getCategorySlug']> {
-  return getLanguageString(cat.slugs, props.language || 'NL', '');
+  return getLanguageString(cat.slugs, infra.language || 'NL', '');
 }
 function getCategoryUrl(
   cat: Category,
@@ -207,11 +210,11 @@ function getCategoryUrl(
   // write it as `getCategoryUrl(...) { return ...this.pattern... }` and
   // detaching the reference crashes with "Cannot read properties of
   // undefined (reading 'pattern')".
-  const urls = props.configuration?.urls;
+  const urls = infra.configuration?.urls;
   if (urls && typeof urls.getCategoryUrl === 'function') {
-    return urls.getCategoryUrl(cat, props.language);
+    return urls.getCategoryUrl(cat, infra.language);
   }
-  const slug = getLanguageString(cat.slugs, props.language || 'NL', '');
+  const slug = getLanguageString(cat.slugs, infra.language || 'NL', '');
   return `/category/${cat.categoryId}/${slug}`;
 }
 function isCurrentItem(index: number): ReturnType<BreadcrumbsState['isCurrentItem']> {
