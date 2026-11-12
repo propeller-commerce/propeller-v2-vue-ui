@@ -31,12 +31,6 @@
             :disabled="loading"
           />
         </div>
-        <template v-if="errorMessage">
-          <div class="text-sm text-destructive bg-destructive/10 p-3 rounded-[var(--radius-control)]">
-            {{ errorMessage }}
-          </div>
-        </template>
-
         <button
           type="submit"
           class="propeller-forgot-password__submit inline-flex items-center justify-center w-full h-10 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-[var(--radius-control)] hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -149,7 +143,7 @@ const infra = useInfraProps(props);
 const email = ref('');
 const submitted = ref(false);
 
-const { loading, error, forgotPassword } = useAuth({
+const { loading, forgotPassword } = useAuth({
   graphqlClient: infra.graphqlClient as GraphQLClient,
 });
 
@@ -174,17 +168,6 @@ const emailLabel = computed(() => {
 const emailPlaceholder = computed(() => {
   return props.labels?.emailPlaceholder || 'name@example.com';
 });
-// Surface a friendly fixed message for any forgot-password failure — server
-// errors can be cryptic (HTTP 4xx / GraphQL "Unauthorized" / etc.) and aren't
-// safe to show to end users. Override via `labels.emailNotFound` if needed.
-const errorMessage = computed(() => {
-  if (!error.value) return '';
-  return (
-    props.labels?.emailNotFound ||
-    "We couldn't find an account with that email address. Please double-check and try again. If you don't receive an email within a few minutes, please check that you entered the correct email address and try again."
-  );
-});
-
 async function handleSubmit(e: any) {
   e.preventDefault();
   if (loading.value) return;
@@ -192,15 +175,12 @@ async function handleSubmit(e: any) {
     props.beforeForgotPassword();
   }
   const result = await forgotPassword(email.value);
-  if (result.ok) {
-    submitted.value = true;
-    if (props.afterForgotPassword) {
-      props.afterForgotPassword(true);
-    }
-  } else {
-    if (props.afterForgotPassword) {
-      props.afterForgotPassword(false);
-    }
+  // The API fails the request for an unknown address only, so an error here
+  // must look exactly like success - anything else tells visitors which
+  // addresses have an account. The host still learns the outcome.
+  submitted.value = true;
+  if (props.afterForgotPassword) {
+    props.afterForgotPassword(result.ok);
   }
 }
 </script>
