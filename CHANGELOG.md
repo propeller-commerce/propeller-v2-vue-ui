@@ -8,6 +8,47 @@ once it reaches 1.0. Until then (the `0.x` line) the public API may change
 between minor versions; breaking changes are called out below and in
 [MIGRATION.md](./MIGRATION.md).
 
+## [0.33.6] - 2026-11-19
+
+### Dependencies
+
+- `@propeller-commerce/propeller-v2-core-ui` ^0.13.2: guests in closed portals no longer see prices
+  (`isContentHidden`), and JSON-LD escapes `<`, `>`, `&`, U+2028 and U+2029.
+
+### Fixed
+- `magicLogin` returns an error when the token exchange yields no session (the SDK answers `null` on partial errors). It used to look up an anonymous viewer and report success, so an expired or forged magic link landed on its redirect instead of the login page.
+
+### Security
+
+- **`ProductBundles`, `ProductBulkPrices` and `GridToolbar` (PRICE sort) use
+  the shared `isContentHidden` rule** (security review #4). Each had its own
+  `portalMode === 'semi-closed' && !user` check, which missed `closed` portals
+  and the `isAuthenticated` hydration flag; `GridToolbar` also read
+  `props.portalMode` / `props.user` instead of the provider-resolved `infra`,
+  so a portal mode set only on the provider never disabled the PRICE sort.
+  The `closed` rule itself (and the stricter JSON-LD escaping in
+  `safeJsonStringify`) lives in core-ui and reaches this package with the next
+  `@propeller-commerce/propeller-v2-core-ui` pin bump.
+- **`SearchBar` hides autosuggest prices from guests in `semi-closed` and
+  `closed` portals** (security review #4). With `showPrice` on, the dropdown
+  showed every result's price whatever the portal mode. It now applies
+  `isContentHidden(portalMode, user, isAuthenticated)` on the provider-resolved
+  `infra`, like the other catalog components: for a hidden viewer there is no
+  price cell, no "Price on request" label and no `#price` slot. New optional
+  props `portalMode` and `isAuthenticated`.
+- **`magicLogin` fails when the viewer lookup returns nothing** (security review
+  #20). After a successful token exchange a `null` viewer still reported
+  success with no user. It now returns the same error as the no-session case
+  (`'Magic-token login failed'`) without dispatching `userLoggedIn`, and when
+  the lookup fails (null or a throw) it clears the access token it had set
+  (`setAccessToken('')`) and calls `onAuthHeaderUpdate('')`, so no half
+  session is left behind.
+
+### Changed
+- Dev only: `happy-dom` joins the dev dependencies for component tests that must
+  mount (the SearchBar dropdown opens from a watcher). Such a file opts in with
+  `// @vitest-environment happy-dom`; the default test environment stays `node`.
+
 ## [0.33.5] - 2026-11-19
 
 ### Fixed

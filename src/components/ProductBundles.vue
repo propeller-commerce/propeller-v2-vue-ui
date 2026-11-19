@@ -477,7 +477,7 @@ import { computed, onMounted, ref } from "vue";
 
 import { Bundle, BundleCondition, BundleItem, Cart, Contact, Customer, GraphQLClient, Product } from "@propeller-commerce/propeller-sdk-v2";
 import { useProductBundles } from "../composables/vue/useProductBundles";
-import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { getLabel as _getLabel, getLanguageString, isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { getProductImageUrl as _getProductImageUrl } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
@@ -703,7 +703,7 @@ function getIsAnonymous(): ReturnType<ProductBundlesState["getIsAnonymous"]> {
   return !infra.user;
 }
 function getHidePrices(): ReturnType<ProductBundlesState["getHidePrices"]> {
-  return (infra.portalMode as string) === "semi-closed" && getIsAnonymous();
+  return isContentHidden(infra.portalMode as string | undefined, infra.user, infra.isAuthenticated as boolean | undefined);
 }
 function getLabel(
   key: string,

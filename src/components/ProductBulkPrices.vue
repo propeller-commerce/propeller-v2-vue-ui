@@ -75,7 +75,7 @@
 import { computed } from 'vue';
 import { ProductPrice, Contact, Customer } from "@propeller-commerce/propeller-sdk-v2";
 import type { IDiscount } from "@propeller-commerce/propeller-sdk-v2";
-import { getLabel as _getLabel } from '@propeller-commerce/propeller-v2-core-ui';
+import { getLabel as _getLabel, isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
@@ -147,7 +147,7 @@ const props = defineProps<ProductBulkPricesProps>();
 const infra = useInfraProps(props);
 
 function isHidden(): ReturnType<ProductBulkPricesState["isHidden"]> {
-  return (infra.portalMode as string) === "semi-closed" && !infra.user;
+  return isContentHidden(infra.portalMode as string | undefined, infra.user, infra.isAuthenticated as boolean | undefined);
 }
 function getIncludeTax(): ReturnType<ProductBulkPricesState["getIncludeTax"]> {
   return infra.includeTax !== undefined ? !!infra.includeTax : false;

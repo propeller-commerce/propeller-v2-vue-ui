@@ -82,6 +82,73 @@ describe('useAuth (vue) — magicLogin', () => {
   });
 });
 
+describe('useAuth (vue) — magicLogin partial-error failure', () => {
+  it('returns err and never looks up a viewer when the exchange answers null with errors', async () => {
+    const { client, execute, calls } = makeFakeClient();
+    execute.mockResolvedValueOnce({ data: { magicTokenLogin: null }, errors: [{ message: 'token expired' }] });
+    const auth = useAuth({ graphqlClient: client as never });
+
+    const res = await auth.magicLogin('expired');
+
+    expect(res.ok).toBe(false);
+    expect(calls.some((c) => c.operationName === 'viewer')).toBe(false);
+    expect(client.setAccessToken).not.toHaveBeenCalled();
+  });
+});
+
+describe('useAuth (vue) — magicLogin without a viewer', () => {
+  /** The exchange succeeds; the viewer lookup then answers with `answer()`. */
+  function clientWithViewer(answer: () => Promise<unknown>) {
+    const fake = makeFakeClient();
+    const base = fake.execute.getMockImplementation()!;
+    fake.execute.mockImplementation(async (args: { operationName: string; variables: unknown }) => {
+      if (args.operationName !== 'viewer') return base(args);
+      fake.calls.push(args);
+      return answer();
+    });
+    return fake;
+  }
+
+  it('fails with the no-session error and clears the token when the viewer is null', async () => {
+    const { client, calls } = clientWithViewer(async () => ({ data: { viewer: null } }));
+    const onAuthHeaderUpdate = vi.fn();
+    const auth = useAuth({ graphqlClient: client as never, onAuthHeaderUpdate });
+
+    const res = await auth.magicLogin('tok-123');
+
+    expect(calls.some((c) => c.operationName === 'viewer')).toBe(true);
+    expect(res).toEqual({ ok: false, error: 'Magic-token login failed' });
+    expect(client.setAccessToken).toHaveBeenLastCalledWith('');
+    expect(onAuthHeaderUpdate).toHaveBeenLastCalledWith('');
+    expect(auth.error.value).toBe('Magic-token login failed');
+  });
+
+  it('returns the same error as the no-session case', async () => {
+    const noSession = makeFakeClient();
+    noSession.execute.mockResolvedValueOnce({ data: { magicTokenLogin: null }, errors: [{ message: 'expired' }] });
+    const noViewer = clientWithViewer(async () => ({ data: { viewer: null } }));
+
+    const a = await useAuth({ graphqlClient: noSession.client as never }).magicLogin('t');
+    const b = await useAuth({ graphqlClient: noViewer.client as never }).magicLogin('t');
+
+    expect(b).toEqual(a);
+  });
+
+  it('clears the token when the viewer lookup throws', async () => {
+    const { client } = clientWithViewer(async () => {
+      throw new Error('network down');
+    });
+    const onAuthHeaderUpdate = vi.fn();
+    const auth = useAuth({ graphqlClient: client as never, onAuthHeaderUpdate });
+
+    const res = await auth.magicLogin('tok-123');
+
+    expect(res.ok).toBe(false);
+    expect(client.setAccessToken).toHaveBeenLastCalledWith('');
+    expect(onAuthHeaderUpdate).toHaveBeenLastCalledWith('');
+  });
+});
+
 describe('useAuth (vue) — createMagicToken', () => {
   it('passes the input to magicTokenCreate and returns the token', async () => {
     const { client, calls } = makeFakeClient();

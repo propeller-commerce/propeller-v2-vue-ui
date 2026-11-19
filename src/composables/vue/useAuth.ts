@@ -219,17 +219,23 @@ export function useAuth(options: UseAuthOptions): UseAuthReturn {
   async function magicLogin(token: string): Promise<Result<AuthSuccess, string>> {
     loading.value = true;
     error.value = null;
+    let tokenSet = false;
     try {
       const loginResult = await new MagicTokenService(graphqlClient).magicTokenLogin(token);
       const session = loginResult?.session;
       const accessToken = session?.accessToken;
       const refreshToken = session?.refreshToken;
       const expiresAt = session?.expirationTime;
+      // A failed exchange can come back as `magicTokenLogin: null` with errors (the SDK
+      // returns null on partial errors) instead of a throw. No session = failure, never an
+      // anonymous "success" that sends the visitor on to the redirect.
+      if (!accessToken) throw new Error('Magic-token login failed');
       if (accessToken) {
         // Mirrors login(): setAccessToken here (the host persists the token). NB
         // this is the un-hardened Vue path — the React package uses an in-memory
         // header only. Fold into the pending Vue localStorage-hardening pass.
         graphqlClient.setAccessToken(accessToken);
+        tokenSet = true;
         onAuthHeaderUpdate?.(accessToken);
       }
       const userService = createServices(graphqlClient).user;
@@ -252,12 +258,19 @@ export function useAuth(options: UseAuthOptions): UseAuthReturn {
         }),
       };
       const viewer = await userService.getViewer(viewerInput);
+      // A token with no viewer behind it is no login either: same failure as no session.
+      if (!viewer) throw new Error('Magic-token login failed');
       const user = viewer as Contact | Customer;
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { user } }));
       }
       return ok({ user, accessToken, refreshToken, expiresAt });
     } catch (e: unknown) {
+      if (tokenSet) {
+        // Leave no half session: drop the token set above and tell the host.
+        graphqlClient.setAccessToken('');
+        onAuthHeaderUpdate?.('');
+      }
       const msg = e instanceof Error ? e.message : 'Magic-token login failed';
       error.value = msg;
       return err(msg);

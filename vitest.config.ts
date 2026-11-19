@@ -19,6 +19,9 @@ import vue from '@vitejs/plugin-vue';
  * it needs none of the above — only `@vitejs/plugin-vue` below to compile the
  * SFC. No new dependency, and it keeps a regression like a line total silently
  * disappearing from an order row out of the e2e suite's lap.
+ *
+ * A test that must mount (state set from a watcher, e.g. the SearchBar
+ * dropdown) opts in per file with `// @vitest-environment happy-dom`.
  */
 export default defineConfig({
   plugins: [vue()],

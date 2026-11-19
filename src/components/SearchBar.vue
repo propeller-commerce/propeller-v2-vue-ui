@@ -67,18 +67,19 @@
                 </div>
                 <!-- Custom price cell via the scoped #price slot (e.g. a
                      "Price by quotation" label); otherwise the default price,
-                     which `showPrice: false` hides entirely. -->
+                     which `showPrice: false` hides entirely. Neither renders
+                     for a guest in a semi-closed or closed portal. -->
                 <slot
-                  v-if="$slots.price"
+                  v-if="!hidePrices && $slots.price"
                   name="price"
                   :result="result"
                 />
-                <template v-else-if="showPrice !== false && result.priceOnRequest">
+                <template v-else-if="!hidePrices && showPrice !== false && result.priceOnRequest">
                   <div class="propeller-search-bar__result-price text-sm text-foreground flex-shrink-0 text-right">
                     {{ priceOnRequestLabel() }}
                   </div>
                 </template>
-                <template v-else-if="showPrice !== false && result.price !== undefined && result.price !== null">
+                <template v-else-if="!hidePrices && showPrice !== false && result.price !== undefined && result.price !== null">
                   <div class="propeller-search-bar__result-price text-sm font-semibold text-foreground flex-shrink-0 text-right">
                     <span class="propeller-search-bar__result-price-value">{{ formatItemPrice(leadingPrice(result)) }}</span>
                     <span class="propeller-search-bar__result-price-label block text-xs font-normal text-muted-foreground">{{ priceTaxLabel() }}</span>
@@ -132,7 +133,7 @@ import {
   Customer,
 } from '@propeller-commerce/propeller-sdk-v2';
 import { useProductSearch } from '../composables/vue/useProductSearch';
-import { getLabel as _getLabel, getLanguageString } from '@propeller-commerce/propeller-v2-core-ui';
+import { getLabel as _getLabel, getLanguageString, isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import { localeForLanguage } from '@propeller-commerce/propeller-v2-core-ui';
 import { formatPrice as _formatPrice } from '@propeller-commerce/propeller-v2-core-ui';
 import { isPriceOnRequest } from '../composables/shared/utils/priceOnRequest';
@@ -176,6 +177,19 @@ export interface SearchBarProps {
 
   /** The currently logged in user (Contact or Customer) */
   user?: Contact | Customer | null;
+
+  /**
+   * Portal visibility mode. In a 'semi-closed' or 'closed' portal the result
+   * prices (and the `#price` slot) are hidden from anonymous visitors.
+   * Resolved from PropellerProvider when omitted; defaults to 'open'.
+   */
+  portalMode?: string;
+
+  /**
+   * Whether a session exists, independent of whether `user` has loaded yet.
+   * Resolved from PropellerProvider when omitted.
+   */
+  isAuthenticated?: boolean;
 
   /** Language code for search requests */
   language?: string;
@@ -426,6 +440,10 @@ function formatItemPrice(price: number): ReturnType<SearchBarState['formatItemPr
 // Match ProductPrice: the toggle picks which value leads. SDK mapping —
 // net = incl. VAT, gross = excl. VAT. Default (includeTax undefined) is excl.
 const useTax = computed(() => !!infra.includeTax);
+// The shared rule: semi-closed and closed portals hide prices from guests.
+const hidePrices = computed(() =>
+  isContentHidden(infra.portalMode as string | undefined, infra.user, infra.isAuthenticated as boolean | undefined)
+);
 function leadingPrice(result: SearchBarResult): number {
   return useTax.value
     ? result.priceNet ?? result.price ?? 0

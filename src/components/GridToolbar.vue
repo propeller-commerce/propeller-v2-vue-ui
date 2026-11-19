@@ -146,7 +146,7 @@
 import { ref, watch, computed } from 'vue';
 
 import { Contact, Customer, ProductSortField, SortOrder } from '@propeller-commerce/propeller-sdk-v2';
-import { type Availability, MIN_STOCK_THRESHOLD } from '@propeller-commerce/propeller-v2-core-ui';
+import { type Availability, MIN_STOCK_THRESHOLD, isContentHidden } from '@propeller-commerce/propeller-v2-core-ui';
 import { useInfraProps } from '../composables/vue/useInfraProps';
 // Default sort field keys shown in the dropdown when sortOptions is not provided.
 const ALL_SORT_FIELDS: string[] = [
@@ -458,7 +458,7 @@ function getActiveFilterBadges(): ReturnType<GridToolbarState['getActiveFilterBa
   return badges;
 }
 function isPriceSortDisabled(): ReturnType<GridToolbarState['isPriceSortDisabled']> {
-  return (props.portalMode as string) === 'semi-closed' && !props.user;
+  return isContentHidden(infra.portalMode as string | undefined, infra.user, infra.isAuthenticated as boolean | undefined);
 }
 function getAvailabilityLabel(): ReturnType<GridToolbarState['getAvailabilityLabel']> {
   const qty = props.minStock as number | undefined;
