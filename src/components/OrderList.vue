@@ -41,7 +41,7 @@
           </div>
         </template>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+        <div class="propeller-order-list__filter-fields grid grid-cols-1 md:grid-cols-2 gap-4">
           <template
             :key="field"
             v-for="(field, index) in searchFields.filter((f) => f !== 'term')"

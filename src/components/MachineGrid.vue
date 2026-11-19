@@ -7,19 +7,15 @@
       </h1>
       <template v-if="rootLoading">
         <p role="status" class="sr-only">{{ getMachineLabel('loading', 'Loading…') }}</p>
-        <div aria-busy="true" data-loading="true" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div aria-busy="true" data-loading="true" class="propeller-machine-grid__grid grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MachineCardSkeleton v-for="i in rootSkeletonCount" :key="i" />
         </div>
       </template>
       <p v-else-if="rootCards.length === 0" class="py-12 text-center text-foreground-subtle">
         {{ getMachineLabel('noMachines', 'No machines found.') }}
       </p>
-      <!-- Bare `grid` (no `grid-cols-1`) is 1 implicit column on mobile. Do NOT
-           add `grid-cols-1`: a consumer app that ships its own Tailwind build
-           after this package's CSS emits an unprefixed `.grid-cols-1` that wins
-           the cascade tie and pins the grid to one column at every breakpoint
-           (ProductGrid dodges this with a `grid-cols-2` base). -->
-      <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <!-- Breakpoints are restated on the BEM class in styles.css, so a host Tailwind sheet can't flatten them. -->
+      <div v-else class="propeller-machine-grid__grid grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MachineCard
           v-for="entry in rootCards"
           :key="entry.machine.id"
